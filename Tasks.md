@@ -191,10 +191,14 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: a game is data you can store, send and replay.
 
-- [ ] `GameState` with `GamePhase` (Deal → Bidding → Talon → Announce → Play → Score)
-- [ ] Append-only `GameEvent` log + `Replay(events)` → the identical `GameState`
-- [ ] `PlayerView(state, seat)` — what a given player is allowed to see
-- [ ] JSON serialization (source-generated)
+- [x] `HandState` with `GamePhase` (Bidding → KingCall → Talon → Announcing → Play → Finished), driving phases 1-7
+- [x] Append-only `GameEvent` log + `HandState.Replay(events)` → the identical hand, including part-played ones
+- [x] The log is the state: nothing derived is stored, so a saved hand is a seed plus a list of actions
+- [x] Explicit barvni valat decision after a solo's talon exchange (`UpgradeToColourValat` / `KeepContract`)
+- [x] `PlayerView.For(hand, seat)` — your cards, everyone else's counts, and only what is public
+- [x] The partner is hidden until the called king falls; the talon packets the declarer left are shown to nobody
+- [x] The odprti berač's hand reaches every view once it is face up
+- [ ] JSON serialization (source-generated) — deferred to Phase 12, where the wire format is actually needed; the event records are plain enough to serialise as they stand
 
 **Acceptance**: replaying 1000 random games returns identical final states; `PlayerView` never contains another player's cards (asserted over the whole JSON).
 
