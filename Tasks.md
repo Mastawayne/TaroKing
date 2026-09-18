@@ -103,12 +103,15 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: correct talon exchange for every contract.
 
-- [ ] Calling a king (including your own → effectively solo); the partner stays hidden until that king falls
-- [ ] Called king in the talon → declarer plays alone; rule for collecting the rest of the talon
-- [ ] Packet choice (3×3, 3×2, 6×1) depending on the contract
-- [ ] Discarding: 5-point cards forbidden; discarded trumps are shown (count is public)
-- [ ] Solo without / beggar / valat — the talon goes to the opponents, unseen
-- [ ] Klop: the 6 talon cards are "gifts" to the first six tricks
+- [x] `KingCall.Resolve` — calling a king (your own → effectively solo); the partner is known to the engine but not published until that king falls
+- [x] Called king in the talon → declarer plays alone
+- [x] `TalonPhase` packet choice: 2×3 (tri), 3×2 (dva), 6×1 (ena) and the same for the solos
+- [x] Lay-away: five-pointers refused, count must match the packet, no duplicates, only cards actually held
+- [x] Laid-away trumps exposed through `ShownDiscards` (the count is public knowledge)
+- [x] Unchosen packets go to `OpponentTalon` and count for the opponents
+- [x] Solo brez / berač / valat — the talon goes to the opponents unseen
+- [x] Klop: the 6 talon cards kept as `KlopGifts` for the first six tricks
+- [ ] Collecting the rest of the talon by winning a trick with the called king (needs trick play — folded into Phase 4)
 
 **Acceptance**: tests — impossible to discard a king/Škis/Mond/Pagat; hand size after the exchange is always 12; klop gifts go to the correct trick winner.
 
@@ -232,6 +235,8 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 - [ ] `TableService` (singleton) — table list, seats, state, one authoritative `GameState` per table
 - [ ] Lobby: create a table (public/private, 3/4 players, timer), join, leave
+- [ ] Table options in valat.si's shape: number of rounds (7-30), seconds per move (1.5-4.5), minimum rating to sit down, members-only
+- [ ] Seed every hand from a cryptographic source and store the seed — the engine's PRNG stays deterministic for replay, but the seed must not be guessable (valat.si mixes atmospheric noise with /dev/urandom)
 - [ ] State broadcast per seat (everyone gets their own `PlayerView`)
 - [ ] Reconnect: a refresh or dropped connection does not kill the hand (60 s grace)
 - [ ] Move timer + auto-move on timeout
@@ -247,7 +252,9 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 - [ ] EF Core + SQLite: `Users`, `Matches`, `Hands`, `Events`, `Ratings`, `ChatMessages`
 - [ ] Login/registration (ASP.NET Core Identity) + guest play without an account
 - [ ] Store played games (event log) + history viewer
-- [ ] Rating (Elo-like, per match rather than per trick) + leaderboard
+- [ ] Rating (Elo-like, per match rather than per trick) + leaderboard — valat.si weights it by match length, the ratio of final scores, and the opponents' starting ratings
+- [ ] Player flags in the lobby, as valat.si does it: member, frequent leaver, number of blacklist reports
+- [ ] Last 30 games visible in history, each round replayable against the bots
 - [ ] Player statistics: success rate per contract type, average difference, pagat ultimo conversion
 
 **Acceptance**: migrations run on an empty database; a finished game shows up in history and moves the rating; the leaderboard matches the totals.
