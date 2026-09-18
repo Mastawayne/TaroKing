@@ -75,7 +75,7 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 - [x] `Deck.Full()` — exactly 54 cards, no duplicates; `Deck.Shuffled(seed)`
 - [x] `Deal.Create(seed)` — 6 to the talon, then packets of 6 per seat, twice round
 - [x] `Deal.FromOrderedPack(pack)` — deal from a known pack order, for tests and replays
-- [x] "No trump in hand" rule → `SeatsWithoutTrump` / `RequiresRedeal` (compulsory klop is Phase 2)
+- [x] "No trump in hand" rule → `SeatsWithoutTrump` / `RequiresRedeal`
 - [x] `CardScoring.Count(cards)` — batches of three plus remainder, order-independent
 
 **Acceptance**: unit tests — all cards sum to 70; 1000 random deals always produce 54 distinct cards; batch counting matches hand-calculated examples; the same seed produces the same deal.
@@ -86,12 +86,14 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: the full auction, including the seniority rule.
 
-- [ ] `Contract` enum + `ContractInfo` (value, talon size, calls a king, contract type)
-- [ ] `BiddingState` — whose turn, who has passed, history
-- [ ] Seniority rule (senior matches, junior must raise)
-- [ ] Forehand stays silent; if everyone passes → klop or three
-- [ ] Auction ends after three consecutive passes
-- [ ] `LegalBids(state)` for the UI and the bots
+- [x] `Contract` enum (bidding rank) + `ContractInfo` table: value, talon size, calls a king, solo, negative, all-tricks, counts card points, allows bonuses, who leads, forehand-only
+- [x] `BiddingState` — whose turn, who has passed, history, winning bid
+- [x] Seniority rule (senior matches, junior must raise); priority runs forehand → dealer
+- [x] Forehand stays silent, the auction opens at seat 1, and the lowest open bid is **dva**
+- [x] Forehand privilege: if the other three pass, forehand names any contract — the only way klop or tri gets played, and forehand may not pass
+- [x] Auction ends once everyone but one bidder has passed
+- [x] `BiddingState.CompulsoryKlop()` for the no-trump redeal
+- [x] `LegalBids()` / `CanPass()` for the UI and the bots
 
 **Acceptance**: tests cover — everyone passes; forehand matching a bid; a junior player may not match; escalation up to valat; the auction always ends with a valid declarer.
 
