@@ -121,13 +121,16 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: server-authoritative move legality.
 
-- [ ] `TrickState`, `PlayCard(player, card)` → `IReadOnlyList<Card> LegalMoves(player)`
-- [ ] Must follow suit; if you cannot, you must trump; otherwise anything
-- [ ] Must overtake in negative contracts (klop, beggar)
-- [ ] Pagat forbidden in negative contracts except when forced
-- [ ] Emperor trick (Škis + Mond + Pagat → the Pagat takes it)
-- [ ] Colour valat: trumps behave as an ordinary suit
-- [ ] Captured Mond detection
+- [x] `TrickRules` — pure functions: `LegalPlays`, `Winner`, `WinningCard`, `IsEmperorTrick`, `CapturedMondSeat`
+- [x] `TrickPlay` — the twelve tricks, owning every hand; `Play(seat, card)` refuses out-of-turn, not-held and illegal cards
+- [x] Must follow suit; if you cannot, you must trump; otherwise anything
+- [x] Must beat the table in negative contracts (klop, berač, odprti berač), trumps included
+- [x] Pagat held back in negative contracts unless nothing else is legal
+- [x] Emperor trick (škis + mond + pagat → the pagat takes it)
+- [x] Colour valat: trumps are an ordinary suit and only win when led
+- [x] Captured mond detection (positive contracts only, even when the pagat steals the trick)
+- [x] Klop gifts handed to the winner of each of the first six tricks
+- [ ] Collecting the rest of the talon by winning a trick with the called king — **needs your confirmation that this is played at all** (see notes)
 
 **Acceptance**: a test per rule, plus a fuzz test — 10 000 random hands played out with random *legal* moves finish without an exception, every player plays 12 cards, 48 cards end in tricks and 6 in the talon.
 
