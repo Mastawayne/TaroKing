@@ -3,24 +3,60 @@ using TaroKing.Engine.Cards;
 
 namespace TaroKing.Engine.Play;
 
+/// <summary>Who is playing for whom, which is what lets a hand be decided before all twelve tricks.</summary>
+public sealed record PlayContext {
+
+	public required int DeclarerSeat { get; init; }
+
+	/// <summary>The called king's holder, when the declarer has a partner.</summary>
+	public int? PartnerSeat { get; init; }
+
+	public bool IsDeclaringSide(int seat) => seat == DeclarerSeat || seat == PartnerSeat;
+}
+
+/// <summary>How a hand finished.</summary>
+public enum HandEnding {
+	InProgress = 0,
+
+	/// <summary>All twelve tricks were played out.</summary>
+	AllTricksPlayed = 1,
+
+	/// <summary>A berač or odprti berač took a trick, so there is nothing left to play for.</summary>
+	NegativeContractBroken = 2,
+
+	/// <summary>A valat lost a trick, so there is nothing left to play for.</summary>
+	ValatBroken = 3
+}
+
 /// <summary>
 /// The twelve tricks of one hand. The engine owns every hand of cards, hands out only the legal
 /// moves for the seat on turn, and refuses anything else — a client can ask, it cannot assert.
+///
+/// Given a <see cref="PlayContext"/> it also knows when to stop early: a berač that takes a trick
+/// and a valat that loses one are both decided on the spot, and the remaining cards are not played.
 /// </summary>
 public sealed class TrickPlay {
 
 	private readonly List<int> _capturedMondSeats = [];
+	private readonly PlayContext? _context;
 	private readonly List<TrickCard> _current = [];
 	private readonly List<Card>[] _hands;
 	private readonly Card[] _klopGifts;
 	private readonly List<Trick> _tricks = [];
 	private readonly List<Card>[] _won;
 
-	private TrickPlay(ContractInfo info, IReadOnlyList<IReadOnlyList<Card>> hands, int leadSeat, IReadOnlyList<Card> klopGifts) {
+	private TrickPlay(
+		ContractInfo info,
+		IReadOnlyList<IReadOnlyList<Card>> hands,
+		int leadSeat,
+		IReadOnlyList<Card> klopGifts,
+		PlayContext? context) {
+
 		Info = info;
 		CurrentSeat = leadSeat;
 		LeadSeat = leadSeat;
 		_klopGifts = [.. klopGifts];
+		_context = context;
 
 		_hands = new List<Card>[TarokConstants.PlayerCount];
 		_won = new List<Card>[TarokConstants.PlayerCount];
@@ -38,7 +74,7 @@ public sealed class TrickPlay {
 	/// <summary>The seat to play next.</summary>
 	public int CurrentSeat { get; private set; }
 
-	/// <summary>1 to 12 while the hand runs; 13 once it is over.</summary>
+	/// <summary>1 to 12 while the hand runs.</summary>
 	public int TrickNumber => _tricks.Count + 1;
 
 	/// <summary>The cards already played to the trick in progress.</summary>
@@ -46,7 +82,12 @@ public sealed class TrickPlay {
 
 	public IReadOnlyList<Trick> Tricks => _tricks;
 
-	public bool IsComplete => _tricks.Count == TarokConstants.TrickCount;
+	public HandEnding Ending { get; private set; } = HandEnding.InProgress;
+
+	public bool IsComplete => Ending != HandEnding.InProgress;
+
+	/// <summary>True when the hand stopped before the twelfth trick because it was already decided.</summary>
+	public bool EndedEarly => Ending is HandEnding.NegativeContractBroken or HandEnding.ValatBroken;
 
 	/// <summary>Seats that lost the mond to the škis; each of them takes a personal penalty.</summary>
 	public IReadOnlyList<int> CapturedMondSeats => _capturedMondSeats;
@@ -55,7 +96,8 @@ public sealed class TrickPlay {
 		ContractInfo info,
 		IReadOnlyList<IReadOnlyList<Card>> hands,
 		int leadSeat,
-		IReadOnlyList<Card>? klopGifts = null) {
+		IReadOnlyList<Card>? klopGifts = null,
+		PlayContext? context = null) {
 
 		ArgumentNullException.ThrowIfNull(info);
 		ArgumentNullException.ThrowIfNull(hands);
@@ -80,13 +122,33 @@ public sealed class TrickPlay {
 			throw new ArgumentException("The same card was dealt twice.", nameof(hands));
 		}
 
-		return new TrickPlay(info, hands, leadSeat, klopGifts ?? []);
+		if (context is not null) {
+			ValidateSeat(context.DeclarerSeat);
+			if (context.PartnerSeat is int partner) {
+				ValidateSeat(partner);
+			}
+		}
+
+		return new TrickPlay(info, hands, leadSeat, klopGifts ?? [], context);
 	}
 
 	/// <summary>The cards a seat still holds.</summary>
 	public IReadOnlyList<Card> Hand(int seat) {
 		ValidateSeat(seat);
 		return _hands[seat];
+	}
+
+	/// <summary>
+	/// True once a seat's cards are face up on the table: the odprti berač's declarer plays open
+	/// from the second trick onwards.
+	/// </summary>
+	public bool IsHandExposed(int seat) {
+		ValidateSeat(seat);
+
+		return Info.Contract == Contract.OpenBeggar
+			&& _context is not null
+			&& seat == _context.DeclarerSeat
+			&& _tricks.Count >= 1;
 	}
 
 	/// <summary>Every card a seat has taken in, including klop gifts.</summary>
@@ -161,6 +223,27 @@ public sealed class TrickPlay {
 
 		_current.Clear();
 		CurrentSeat = winner;
+
+		Ending = DecideEnding(winner);
+	}
+
+	private HandEnding DecideEnding(int lastWinner) {
+		if (_context is not null) {
+			bool declaringSideTookIt = _context.IsDeclaringSide(lastWinner);
+
+			// A berač that takes anything has already failed; so has a valat that drops a trick.
+			if (Info.TakesNoTricks && !Info.IsKlop && declaringSideTookIt) {
+				return HandEnding.NegativeContractBroken;
+			}
+
+			if (Info.TakesAllTricks && !declaringSideTookIt) {
+				return HandEnding.ValatBroken;
+			}
+		}
+
+		return _tricks.Count == TarokConstants.TrickCount
+			? HandEnding.AllTricksPlayed
+			: HandEnding.InProgress;
 	}
 
 	private static void ValidateSeat(int seat) {

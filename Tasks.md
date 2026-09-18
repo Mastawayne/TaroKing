@@ -174,11 +174,14 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: beggar, open beggar, colour valat and valat in full.
 
-- [ ] Beggar — declarer leads, 0 tricks, no bonuses
-- [ ] Open beggar — hand exposed after the first trick
-- [ ] Colour valat — 125, trumps as a plain suit
-- [ ] Valat — 500, ends the moment a trick is lost
-- [ ] Upgrading a solo contract to colour valat after the talon exchange
+- [x] `PlayContext` — the engine now knows which seats are the declaring side during play
+- [x] `HandEnding` — a hand finishes by playing all twelve tricks, by a berač taking one, or by a valat dropping one; the rest of the cards are never played
+- [x] Berač — declarer leads, 0 tricks, no bonuses; decided the moment it takes a trick
+- [x] Odprti berač — `IsHandExposed` turns the declarer's hand face up from the second trick
+- [x] Barvni valat — 125, trumps as a plain suit (Phase 4), decided the moment a defender takes a trick
+- [x] Valat — 500, same early finish; a partner taking a trick does not break it
+- [x] Klop stays negative but never ends early
+- [x] `Contracts.CanUpgradeToColourValat` — solo tri/dva/ena may be lifted after the talon exchange (wiring it into the session is Phase 8)
 
 **Acceptance**: tests — a beggar loses on the first trick taken; the open beggar's hand is revealed at the right moment; a valat aborts correctly.
 

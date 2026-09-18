@@ -118,6 +118,13 @@ public static class Contracts {
 		return Table[index];
 	}
 
+	/// <summary>
+	/// True for the contracts a declarer may lift to a barvni valat after seeing the talon:
+	/// having taken the packet, a solo three, two or one can go for every trick instead.
+	/// </summary>
+	public static bool CanUpgradeToColourValat(Contract contract) =>
+		contract is Contract.SoloThree or Contract.SoloTwo or Contract.SoloOne;
+
 	/// <summary>Contracts from <paramref name="lowest"/> up to valat, in bidding order.</summary>
 	public static IReadOnlyList<Contract> From(Contract lowest) {
 		List<Contract> contracts = [];
