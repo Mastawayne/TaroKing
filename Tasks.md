@@ -1,0 +1,272 @@
+# Taroksi — valat.si remake
+
+Slovenian tarok (4 players, full rules) — Blazor Server (.NET 10), local play against bots **and** online tables in v1.
+
+- **Solution**: `Taroksi.sln`
+- **Engine**: pure C# class library (no I/O), deterministic, seeded RNG → same seed means the same hand
+- **The server is the authority**: the client never holds another player's cards; every rule is re-checked server-side
+- **Commit rule**: one phase = one commit (`Phase N - Name`). Details stay here, not in the commit message.
+
+---
+
+## Rules the engine must cover (reference)
+
+**Pack**: 54 cards — 22 trumps (Škis > XXI Mond > XX…II > I Pagat) + 4 suits of 8.
+Black suits (clubs, spades): K, Q, Knight, Jack, 10, 9, 8, 7 — red suits (hearts, diamonds): K, Q, Knight, Jack, 1, 2, 3, 4.
+
+**Card values**: king / Škis / Mond / Pagat = 5, queen = 4, knight = 3, jack = 2, everything else = 1.
+Counted in batches of three: add the values, subtract 2 per batch. Pack total **70**, **36+** wins.
+
+**Bidding ladder** (lowest first):
+
+| Contract | Value | Talon | Calls a king | Goal |
+|---|---|---|---|---|
+| Klop | ±70 | 6 cards, turned up trick by trick | — | 0 tricks |
+| Three | 10 + difference | 3 | yes | 36+ |
+| Two | 20 + difference | 2 | yes | 36+ |
+| One | 30 + difference | 1 | yes | 36+ |
+| Solo three | 40 + difference | 3 | no | 36+ |
+| Solo two | 50 + difference | 2 | no | 36+ |
+| Solo one | 60 + difference | 1 | no | 36+ |
+| Beggar | 70 | — | no | 0 tricks |
+| Solo without | 80 | — | no | 36+ |
+| Open beggar | 90 | — | no | 0 tricks, hand exposed after trick 1 |
+| Colour valat | 125 | — | no | all tricks, trumps act as a plain suit |
+| Valat | 500 | — | no | all tricks |
+
+Bidding priority: forehand > 2nd > 3rd > dealer; a senior player may *match* a bid, a junior one must *raise* or pass.
+If everyone but forehand passes, forehand may only play klop or three.
+
+**Difference** = (card points won − 35), rounded to the nearest 5.
+
+**Announcements** (silent / announced): trula 10/20, kings 10/20, king ultimo 10/20, pagat ultimo 25/50, valat 250/500.
+Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, up to ×16). Announcements are kontra'd separately.
+
+**Penalties and special cases**: captured Mond (Škis and Mond in the same trick) = −20, personal; emperor trick (Škis + Mond + Pagat) is taken by the Pagat; in negative contracts you must beat the highest card on the table and may not play the Pagat except when forced; no 5-point card (kings, Škis, Mond, Pagat) may be discarded to the talon.
+
+**Radlci**: written for klop, for beggar and above, and for any valat. Winning with an uncancelled radlc = ×2 and the radlc is crossed off; losing = ×2 and the radlc stays. At the end of a session, −100 for each uncancelled radlc.
+
+---
+
+## Phase 0 — Scaffold and conventions
+
+**Goal**: the solution builds, tests run, the Blazor app starts on an empty page.
+
+- [x] `Taroksi.sln` with `Taroksi.Engine`, `Taroksi.Bots`, `Taroksi.Data`, `Taroksi.App`, `Taroksi.Engine.Tests`
+- [x] `Directory.Build.props` — `net10.0`, nullable, `Company = DaTaLabs`
+- [x] `.editorconfig` — tabs, 1TBS, braces always required
+- [x] `.gitignore`, `README.md`, `Tasks.md`
+- [x] Blazor Server app (InteractiveServer) with a basic layout
+- [x] `dotnet build` clean, `dotnet test` green (3 tests)
+- [x] No NU1903 advisories — EF Core pinned to 10.0.12, `System.Security.Cryptography.Xml` pinned explicitly
+- [ ] `git init` + first commit
+
+**Acceptance**: `dotnet run --project src\Taroksi.App` opens the page; `dotnet test` reports 3 passed; `dotnet restore` prints no warnings.
+
+---
+
+## Phase 1 — Cards, pack, deal
+
+**Goal**: a complete, tested representation of the pack.
+
+- [ ] `Suit` (Clubs, Spades, Hearts, Diamonds, Trump), `Rank`, `Card` (readonly record struct)
+- [ ] Card point values + `CardComparer` within a suit
+- [ ] `Deck.Full()` — exactly 54 cards, no duplicates
+- [ ] `Deal.Create(seed)` — 6 to the talon, 12 to each player, packets of 6 dealt anticlockwise
+- [ ] "No trump in hand" rule → hand annulled, compulsory klop
+- [ ] `CardScoring.Count(cards)` — batches of three plus remainder
+
+**Acceptance**: unit tests — all cards sum to 70; 1000 random deals always produce 54 distinct cards; batch counting matches hand-calculated examples; the same seed produces the same deal.
+
+---
+
+## Phase 2 — Bidding
+
+**Goal**: the full auction, including the seniority rule.
+
+- [ ] `Contract` enum + `ContractInfo` (value, talon size, calls a king, contract type)
+- [ ] `BiddingState` — whose turn, who has passed, history
+- [ ] Seniority rule (senior matches, junior must raise)
+- [ ] Forehand stays silent; if everyone passes → klop or three
+- [ ] Auction ends after three consecutive passes
+- [ ] `LegalBids(state)` for the UI and the bots
+
+**Acceptance**: tests cover — everyone passes; forehand matching a bid; a junior player may not match; escalation up to valat; the auction always ends with a valid declarer.
+
+---
+
+## Phase 3 — Talon, calling a king, discarding
+
+**Goal**: correct talon exchange for every contract.
+
+- [ ] Calling a king (including your own → effectively solo); the partner stays hidden until that king falls
+- [ ] Called king in the talon → declarer plays alone; rule for collecting the rest of the talon
+- [ ] Packet choice (3×3, 3×2, 6×1) depending on the contract
+- [ ] Discarding: 5-point cards forbidden; discarded trumps are shown (count is public)
+- [ ] Solo without / beggar / valat — the talon goes to the opponents, unseen
+- [ ] Klop: the 6 talon cards are "gifts" to the first six tricks
+
+**Acceptance**: tests — impossible to discard a king/Škis/Mond/Pagat; hand size after the exchange is always 12; klop gifts go to the correct trick winner.
+
+---
+
+## Phase 4 — Trick play
+
+**Goal**: server-authoritative move legality.
+
+- [ ] `TrickState`, `PlayCard(player, card)` → `IReadOnlyList<Card> LegalMoves(player)`
+- [ ] Must follow suit; if you cannot, you must trump; otherwise anything
+- [ ] Must overtake in negative contracts (klop, beggar)
+- [ ] Pagat forbidden in negative contracts except when forced
+- [ ] Emperor trick (Škis + Mond + Pagat → the Pagat takes it)
+- [ ] Colour valat: trumps behave as an ordinary suit
+- [ ] Captured Mond detection
+
+**Acceptance**: a test per rule, plus a fuzz test — 10 000 random hands played out with random *legal* moves finish without an exception, every player plays 12 cards, 48 cards end in tricks and 6 in the talon.
+
+---
+
+## Phase 5 — Announcements and kontras
+
+**Goal**: the announcement round after the talon exchange.
+
+- [ ] `Announcement` (trula, kings, pagat ultimo, king ultimo, valat)
+- [ ] Announcement round until three consecutive passes
+- [ ] Kontra / rekontra / subkontra / mordkontra with multipliers (×2 … ×16)
+- [ ] A kontra must name a specific announcement or the game itself; you cannot kontra your partner
+- [ ] Silent variants are resolved after play
+
+**Acceptance**: a test per multiplier; an announced valat cancels every other bonus; a silent trula is credited without any announcement.
+
+---
+
+## Phase 6 — Scoring
+
+**Goal**: a score sheet that matches the valat.si one.
+
+- [ ] `HandResult` → points for declarer and partner / opponents
+- [ ] Difference (rounded to 5), contract value, bonuses, kontras
+- [ ] Mond penalty (−20, personal)
+- [ ] Klop: +70 / −70 / −rounded points, every player for themselves
+- [ ] Radlci: writing, cancelling, ×2, −100 at the end of a session
+- [ ] `ScoreSheet` — running totals across hands
+
+**Acceptance**: 20 hand-calculated scenarios match to the point; the sum of all changes in a hand is 0 (except radlci and the Mond penalty, which are personal).
+
+---
+
+## Phase 7 — Negative contracts and valats
+
+**Goal**: beggar, open beggar, colour valat and valat in full.
+
+- [ ] Beggar — declarer leads, 0 tricks, no bonuses
+- [ ] Open beggar — hand exposed after the first trick
+- [ ] Colour valat — 125, trumps as a plain suit
+- [ ] Valat — 500, ends the moment a trick is lost
+- [ ] Upgrading a solo contract to colour valat after the talon exchange
+
+**Acceptance**: tests — a beggar loses on the first trick taken; the open beggar's hand is revealed at the right moment; a valat aborts correctly.
+
+---
+
+## Phase 8 — Game state, serialization, replay
+
+**Goal**: a game is data you can store, send and replay.
+
+- [ ] `GameState` with `GamePhase` (Deal → Bidding → Talon → Announce → Play → Score)
+- [ ] Append-only `GameEvent` log + `Replay(events)` → the identical `GameState`
+- [ ] `PlayerView(state, seat)` — what a given player is allowed to see
+- [ ] JSON serialization (source-generated)
+
+**Acceptance**: replaying 1000 random games returns identical final states; `PlayerView` never contains another player's cards (asserted over the whole JSON).
+
+---
+
+## Phase 9 — Bots v1
+
+**Goal**: a bot that plays decently and fast.
+
+- [ ] `IPlayerAgent` (async `ChooseBid`, `ChooseTalon`, `ChooseDiscards`, `ChooseAnnouncements`, `ChooseCard`)
+- [ ] `RandomBot` (test baseline)
+- [ ] `HeuristicBot` — hand evaluation (trump count, Škis/Mond/Pagat, kings), signalling, protecting the pagat
+- [ ] Three profiles: cautious / normal / aggressive
+- [ ] Configurable "thinking" delay
+
+**Acceptance**: HeuristicBot beats RandomBot in 1000 hands with a ≥70 % average difference; a move takes ≤ 50 ms.
+
+---
+
+## Phase 10 — Blazor table UI
+
+**Goal**: the game is clickable.
+
+- [ ] `TablePage` — 4 seats, table, current trick in the middle
+- [ ] Card component (SVG/CSS), fanned hand, hover, selection
+- [ ] Bidding panel, talon panel, announcement and kontra panel
+- [ ] Score sheet with radlci
+- [ ] Legal moves highlighted (illegal ones dimmed *and* rejected server-side)
+- [ ] Responsive layout (desktop + phone)
+
+**Acceptance**: a full hand against bots is played without opening the console; an illegal move sent from the client is rejected by the server.
+
+---
+
+## Phase 11 — Local game against bots (end to end)
+
+- [ ] "Quick game" — 1 human + 3 bots, instant start
+- [ ] Choose number of hands / play to X points
+- [ ] End screen with score sheet and session statistics
+- [ ] Saving and resuming an interrupted session
+
+**Acceptance**: 10 consecutive hands without an error; refreshing the page mid-hand restores the state.
+
+---
+
+## Phase 12 — Online tables
+
+**Goal**: real multiplayer on Blazor Server circuits.
+
+- [ ] `TableService` (singleton) — table list, seats, state, one authoritative `GameState` per table
+- [ ] Lobby: create a table (public/private, 3/4 players, timer), join, leave
+- [ ] State broadcast per seat (everyone gets their own `PlayerView`)
+- [ ] Reconnect: a refresh or dropped connection does not kill the hand (60 s grace)
+- [ ] Move timer + auto-move on timeout
+- [ ] A bot takes over the seat of a player who drops
+- [ ] Table chat + spectators (no view of anyone's cards)
+
+**Acceptance**: 4 browsers play a full hand; killing one tab mid-hand hands the seat to a bot and gives it back on return; no client ever receives another player's cards (verified in the network log).
+
+---
+
+## Phase 13 — Accounts, persistence, rating
+
+- [ ] EF Core + SQLite: `Users`, `Matches`, `Hands`, `Events`, `Ratings`, `ChatMessages`
+- [ ] Login/registration (ASP.NET Core Identity) + guest play without an account
+- [ ] Store played games (event log) + history viewer
+- [ ] Rating (Elo-like, per match rather than per trick) + leaderboard
+- [ ] Player statistics: success rate per contract type, average difference, pagat ultimo conversion
+
+**Acceptance**: migrations run on an empty database; a finished game shows up in history and moves the rating; the leaderboard matches the totals.
+
+---
+
+## Phase 14 — Polish and deploy
+
+- [ ] Sounds, dealing and trick-collecting animations
+- [ ] Themes (classic green / dark) + settings (speed, confirm move)
+- [ ] i18n: Slovenian by default, English second
+- [ ] Mobile layout (portrait)
+- [ ] Health check, logging (Serilog), rate limiting
+- [ ] Docker + docker-compose, deployment notes
+
+**Acceptance**: Lighthouse ≥ 90 on the table page; the app runs in a container against an external SQLite file; the language switches without a restart.
+
+---
+
+## After v1
+
+- 3-player tarok (16 cards, no king calling, Mond penalty −21)
+- Tournaments and league seasons
+- Post-game analysis (where you lost points)
+- Stronger bot (MCTS with determinization of hidden cards)
+- Friends, private rooms, invites

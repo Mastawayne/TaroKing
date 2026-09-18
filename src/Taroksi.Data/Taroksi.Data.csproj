@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<RootNamespace>Taroksi.Data</RootNamespace>
+		<AssemblyName>Taroksi.Data</AssemblyName>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<!--
+		Transitive pin: Microsoft.EntityFrameworkCore.Design drags in an old
+		System.Security.Cryptography.Xml (9.0.0) through Roslyn, which trips NU1903.
+		Remove this once the Design package ships a newer one.
+	-->
+	<ItemGroup>
+		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.12" />
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Taroksi.Engine\Taroksi.Engine.csproj" />
+	</ItemGroup>
+
+</Project>

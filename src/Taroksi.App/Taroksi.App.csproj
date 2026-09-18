@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<RootNamespace>Taroksi.App</RootNamespace>
+		<AssemblyName>Taroksi.App</AssemblyName>
+		<UserSecretsId>taroksi-app</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Taroksi.Engine\Taroksi.Engine.csproj" />
+		<ProjectReference Include="..\Taroksi.Bots\Taroksi.Bots.csproj" />
+		<ProjectReference Include="..\Taroksi.Data\Taroksi.Data.csproj" />
+	</ItemGroup>
+
+</Project>

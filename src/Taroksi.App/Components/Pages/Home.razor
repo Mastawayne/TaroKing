@@ -1,0 +1,31 @@
+@page "/"
+
+<PageTitle>Taroksi</PageTitle>
+
+<h1>Taroksi</h1>
+
+<p class="lead">Slovenski tarok — remake valat.si. Motor, mize in boti pridejo po fazah iz <code>Tasks.md</code>.</p>
+
+<section class="card-panel">
+	<h2>Stanje</h2>
+	<ul>
+		<li>Faza 0 — scaffold: <strong>v teku</strong></li>
+		<li>Igralcev za mizo: @TarokConstants.PlayerCount</li>
+		<li>Kart v špilu: @TarokConstants.DeckSize</li>
+		<li>Za zmago: @TarokConstants.WinningCardPoints od @TarokConstants.TotalCardPoints točk</li>
+	</ul>
+</section>
+
+<section class="card-panel">
+	<h2>Preizkus interaktivnosti</h2>
+	<p>Razdeljenih partij v tej seji: <strong>@_dealCount</strong></p>
+	<button class="btn" @onclick="Deal">Razdeli</button>
+</section>
+
+@code {
+	private int _dealCount;
+
+	private void Deal() {
+		_dealCount++;
+	}
+}

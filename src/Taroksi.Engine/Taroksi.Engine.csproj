@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<RootNamespace>Taroksi.Engine</RootNamespace>
+		<AssemblyName>Taroksi.Engine</AssemblyName>
+	</PropertyGroup>
+
+</Project>
