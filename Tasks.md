@@ -140,11 +140,14 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: the announcement round after the talon exchange.
 
-- [ ] `Announcement` (trula, kings, pagat ultimo, king ultimo, valat)
-- [ ] Announcement round until three consecutive passes
-- [ ] Kontra / rekontra / subkontra / mordkontra with multipliers (×2 … ×16)
-- [ ] A kontra must name a specific announcement or the game itself; you cannot kontra your partner
-- [ ] Silent variants are resolved after play
+- [x] `Bonus` + `Bonuses` table (trula, kralji, kralj ultimo, pagat ultimo, valat) with silent and announced values
+- [x] `AnnouncementRound` — starts with the declarer, several announcements allowed per turn, ends when the table goes all the way round without an action
+- [x] Pagat ultimo only from the pagat holder, kralj ultimo only from the called king's holder
+- [x] One announcement of a bonus per side; the other side may still claim the same bonus
+- [x] Kontra / rekontra / subkontra / mordkontra, alternating sides, ×2 each step up to ×16
+- [x] A kontra names the game or one specific announcement; you cannot kontra your own side
+- [x] Klop cannot be kontra'd unless `allowKlopKontra` is switched on (house rule)
+- [ ] Silent variants are resolved after play — Phase 6, where the scoring lives
 
 **Acceptance**: a test per multiplier; an announced valat cancels every other bonus; a silent trula is credited without any announcement.
 
