@@ -157,14 +157,16 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: a score sheet that matches the valat.si one.
 
-- [ ] `HandResult` → points for declarer and partner / opponents
-- [ ] Difference (rounded to 5), contract value, bonuses, kontras
-- [ ] Mond penalty (−20, personal)
-- [ ] Klop: +70 / −70 / −rounded points, every player for themselves
-- [ ] Radlci: writing, cancelling, ×2, −100 at the end of a session
-- [ ] `ScoreSheet` — running totals across hands
+- [x] `HandScorer` + `HandScore` — itemised `ScoreLine`s, always written from the declaring side's point of view
+- [x] Difference (`RoundToFive`, halves away from zero), game value, silent and announced bonuses, kontra multipliers
+- [x] `ContractInfo.ScoresDifference` added, so solo brez stays flat at 80 while tri/dva/ena and the solos score the margin
+- [x] Bonus resolution from the piles and tricks: trula, kralji, pagat ultimo, kralj ultimo, valat — and a valat sweeps the rest off the sheet
+- [x] Mond penalty (−20, personal, on top of the side's result)
+- [x] Klop: +70 / −70 / −rounded points, every player for themselves
+- [x] `ScoreSheet` — running totals, radlci written for klop / berač-and-above / any valat, cancelled on a declared win, −100 each at the end
+- [ ] **Open**: does a declarer's radlc double the whole hand, or only the declaring side's half? Currently the whole hand (symmetric)
 
-**Acceptance**: 20 hand-calculated scenarios match to the point; the sum of all changes in a hand is 0 (except radlci and the Mond penalty, which are personal).
+**Acceptance**: hand-calculated scenarios match to the point. Note the score is *per player*, not zero-sum: everyone on the winning side writes the amount and everyone on the losing side writes it as a minus, so a solo costs each of the three opponents the full value.
 
 ---
 
