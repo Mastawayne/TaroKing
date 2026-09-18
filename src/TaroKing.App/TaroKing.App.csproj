@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<RootNamespace>TaroKing.App</RootNamespace>
+		<AssemblyName>TaroKing.App</AssemblyName>
+		<UserSecretsId>taroking-app</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TaroKing.Engine\TaroKing.Engine.csproj" />
+		<ProjectReference Include="..\TaroKing.Bots\TaroKing.Bots.csproj" />
+		<ProjectReference Include="..\TaroKing.Data\TaroKing.Data.csproj" />
+	</ItemGroup>
+
+</Project>

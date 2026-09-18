@@ -1,4 +1,4 @@
-namespace Taroksi.Bots;
+namespace TaroKing.Bots;
 
 /// <summary>How daring a bot is when bidding and announcing.</summary>
 public enum BotProfile {

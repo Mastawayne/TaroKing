@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<RootNamespace>TaroKing.Bots</RootNamespace>
+		<AssemblyName>TaroKing.Bots</AssemblyName>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\TaroKing.Engine\TaroKing.Engine.csproj" />
+	</ItemGroup>
+
+</Project>

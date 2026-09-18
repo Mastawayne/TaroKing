@@ -1,4 +1,4 @@
-# Taroksi
+# TaroKing
 
 Remake of [valat.si](https://valat.si) — Slovenian Tarok (4 players, full rules), built with **Blazor Server on .NET 10**.
 
@@ -6,11 +6,11 @@ Remake of [valat.si](https://valat.si) — Slovenian Tarok (4 players, full rule
 
 | Project | What it is |
 |---|---|
-| `src/Taroksi.Engine` | Pure C# rules engine — cards, dealing, bidding, talon, trick play, announcements, scoring. No I/O, no ASP.NET, deterministic (seeded RNG). |
-| `src/Taroksi.Bots` | AI players implementing `IPlayerAgent`. |
-| `src/Taroksi.Data` | EF Core + SQLite persistence: users, matches, hands, ratings, chat. |
-| `src/Taroksi.App` | Blazor Server web app — lobby, tables, UI. Single source of truth for game state. |
-| `tests/Taroksi.Engine.Tests` | xUnit tests for the engine. |
+| `src/TaroKing.Engine` | Pure C# rules engine — cards, dealing, bidding, talon, trick play, announcements, scoring. No I/O, no ASP.NET, deterministic (seeded RNG). |
+| `src/TaroKing.Bots` | AI players implementing `IPlayerAgent`. |
+| `src/TaroKing.Data` | EF Core + SQLite persistence: users, matches, hands, ratings, chat. |
+| `src/TaroKing.App` | Blazor Server web app — lobby, tables, UI. Single source of truth for game state. |
+| `tests/TaroKing.Engine.Tests` | xUnit tests for the engine. |
 
 ## Requirements
 
@@ -23,7 +23,7 @@ Remake of [valat.si](https://valat.si) — Slovenian Tarok (4 players, full rule
 dotnet restore
 dotnet build
 dotnet test
-dotnet run --project src\Taroksi.App
+dotnet run --project src\TaroKing.App
 ```
 
 Then open the URL printed in the console (default `https://localhost:7101`).

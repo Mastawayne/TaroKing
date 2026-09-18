@@ -1,4 +1,4 @@
-using Taroksi.App.Components;
+using TaroKing.App.Components;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

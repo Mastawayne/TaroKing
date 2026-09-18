@@ -1,8 +1,8 @@
-# Taroksi — valat.si remake
+# TaroKing — valat.si remake
 
 Slovenian tarok (4 players, full rules) — Blazor Server (.NET 10), local play against bots **and** online tables in v1.
 
-- **Solution**: `Taroksi.sln`
+- **Solution**: `TaroKing.sln`
 - **Engine**: pure C# class library (no I/O), deterministic, seeded RNG → same seed means the same hand
 - **The server is the authority**: the client never holds another player's cards; every rule is re-checked server-side
 - **Commit rule**: one phase = one commit (`Phase N - Name`). Details stay here, not in the commit message.
@@ -52,16 +52,16 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: the solution builds, tests run, the Blazor app starts on an empty page.
 
-- [x] `Taroksi.sln` with `Taroksi.Engine`, `Taroksi.Bots`, `Taroksi.Data`, `Taroksi.App`, `Taroksi.Engine.Tests`
+- [x] `TaroKing.sln` with `TaroKing.Engine`, `TaroKing.Bots`, `TaroKing.Data`, `TaroKing.App`, `TaroKing.Engine.Tests`
 - [x] `Directory.Build.props` — `net10.0`, nullable, `Company = DaTaLabs`
 - [x] `.editorconfig` — tabs, 1TBS, braces always required
 - [x] `.gitignore`, `README.md`, `Tasks.md`
 - [x] Blazor Server app (InteractiveServer) with a basic layout
 - [x] `dotnet build` clean, `dotnet test` green (3 tests)
 - [x] No NU1903 advisories — EF Core pinned to 10.0.12, `System.Security.Cryptography.Xml` pinned explicitly
-- [ ] `git init` + first commit
+- [x] `git init` + first commit
 
-**Acceptance**: `dotnet run --project src\Taroksi.App` opens the page; `dotnet test` reports 3 passed; `dotnet restore` prints no warnings.
+**Acceptance**: `dotnet run --project src\TaroKing.App` opens the page; `dotnet test` reports 3 passed; `dotnet restore` prints no warnings.
 
 ---
 
@@ -69,12 +69,14 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: a complete, tested representation of the pack.
 
-- [ ] `Suit` (Clubs, Spades, Hearts, Diamonds, Trump), `Rank`, `Card` (readonly record struct)
-- [ ] Card point values + `CardComparer` within a suit
-- [ ] `Deck.Full()` — exactly 54 cards, no duplicates
-- [ ] `Deal.Create(seed)` — 6 to the talon, 12 to each player, packets of 6 dealt anticlockwise
-- [ ] "No trump in hand" rule → hand annulled, compulsory klop
-- [ ] `CardScoring.Count(cards)` — batches of three plus remainder
+- [x] `Suit` (Clubs, Spades, Hearts, Diamonds, Trump), `SuitRank`, `Card` (readonly record struct)
+- [x] Card point values + ordering within a suit (`IComparable<Card>`, display order only)
+- [x] `Pcg32` — own deterministic PRNG, so a seed means the same hand on any machine or runtime version
+- [x] `Deck.Full()` — exactly 54 cards, no duplicates; `Deck.Shuffled(seed)`
+- [x] `Deal.Create(seed)` — 6 to the talon, then packets of 6 per seat, twice round
+- [x] `Deal.FromOrderedPack(pack)` — deal from a known pack order, for tests and replays
+- [x] "No trump in hand" rule → `SeatsWithoutTrump` / `RequiresRedeal` (compulsory klop is Phase 2)
+- [x] `CardScoring.Count(cards)` — batches of three plus remainder, order-independent
 
 **Acceptance**: unit tests — all cards sum to 70; 1000 random deals always produce 54 distinct cards; batch counting matches hand-calculated examples; the same seed produces the same deal.
 

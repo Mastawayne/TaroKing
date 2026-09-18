@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<RootNamespace>Taroksi.Data</RootNamespace>
-		<AssemblyName>Taroksi.Data</AssemblyName>
+		<RootNamespace>TaroKing.Data</RootNamespace>
+		<AssemblyName>TaroKing.Data</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -24,7 +24,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Taroksi.Engine\Taroksi.Engine.csproj" />
+		<ProjectReference Include="..\TaroKing.Engine\TaroKing.Engine.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -7,15 +7,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{77E1DDB6-E40
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E8306F0D-B19F-4105-AECC-537A36AFA055}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Taroksi.Engine", "src\Taroksi.Engine\Taroksi.Engine.csproj", "{2F2CE895-DDDB-4D56-B224-D5A5F99CE639}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaroKing.Engine", "src\TaroKing.Engine\TaroKing.Engine.csproj", "{2F2CE895-DDDB-4D56-B224-D5A5F99CE639}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Taroksi.Bots", "src\Taroksi.Bots\Taroksi.Bots.csproj", "{6171B620-FC77-4A75-B65E-26590279018A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaroKing.Bots", "src\TaroKing.Bots\TaroKing.Bots.csproj", "{6171B620-FC77-4A75-B65E-26590279018A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Taroksi.Data", "src\Taroksi.Data\Taroksi.Data.csproj", "{2C005A17-C107-4335-9194-713E41437103}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaroKing.Data", "src\TaroKing.Data\TaroKing.Data.csproj", "{2C005A17-C107-4335-9194-713E41437103}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Taroksi.App", "src\Taroksi.App\Taroksi.App.csproj", "{D37DF998-79A2-4DE7-9800-439B236A5C9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaroKing.App", "src\TaroKing.App\TaroKing.App.csproj", "{D37DF998-79A2-4DE7-9800-439B236A5C9B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Taroksi.Engine.Tests", "tests\Taroksi.Engine.Tests\Taroksi.Engine.Tests.csproj", "{A917E5B0-2457-47F3-AD63-F9AC15E9C431}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaroKing.Engine.Tests", "tests\TaroKing.Engine.Tests\TaroKing.Engine.Tests.csproj", "{A917E5B0-2457-47F3-AD63-F9AC15E9C431}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

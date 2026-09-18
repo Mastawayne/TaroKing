@@ -1,4 +1,4 @@
-namespace Taroksi.Engine;
+namespace TaroKing.Engine;
 
 /// <summary>Fixed numbers of the four-player Slovenian tarok game.</summary>
 public static class TarokConstants {

@@ -1,4 +1,4 @@
-namespace Taroksi.Engine.Tests;
+namespace TaroKing.Engine.Tests;
 
 public class TarokConstantsTests {
 

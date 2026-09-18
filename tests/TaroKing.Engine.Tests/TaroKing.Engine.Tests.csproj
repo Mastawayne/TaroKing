@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<RootNamespace>Taroksi.Engine.Tests</RootNamespace>
-		<AssemblyName>Taroksi.Engine.Tests</AssemblyName>
+		<RootNamespace>TaroKing.Engine.Tests</RootNamespace>
+		<AssemblyName>TaroKing.Engine.Tests</AssemblyName>
 		<IsPackable>false</IsPackable>
 		<IsTestProject>true</IsTestProject>
 	</PropertyGroup>
@@ -14,7 +14,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\Taroksi.Engine\Taroksi.Engine.csproj" />
+		<ProjectReference Include="..\..\src\TaroKing.Engine\TaroKing.Engine.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
