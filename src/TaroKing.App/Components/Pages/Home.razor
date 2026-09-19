@@ -4,28 +4,23 @@
 
 <h1>TaroKing</h1>
 
-<p class="lead">Slovenski tarok — remake valat.si. Motor, mize in boti pridejo po fazah iz <code>Tasks.md</code>.</p>
+<p class="lead">
+	Slovenski tarok. Motor, boti in miza so zgrajeni po fazah iz <code>Tasks.md</code> —
+	igra proti botom teče, spletne mize pridejo naslednje.
+</p>
 
 <section class="card-panel">
-	<h2>Stanje</h2>
+	<h2>Zaigraj</h2>
+	<p>Ena partija proti trem botom, s polnimi pravili: licitacija, talon, napovedi, kontre in štrafta.</p>
+	<a class="btn" href="/miza">Na mizo</a>
+</section>
+
+<section class="card-panel">
+	<h2>Pravila na kratko</h2>
 	<ul>
-		<li>Faza 0 — scaffold: <strong>v teku</strong></li>
 		<li>Igralcev za mizo: @TarokConstants.PlayerCount</li>
-		<li>Kart v špilu: @TarokConstants.DeckSize</li>
+		<li>Kart v špilu: @TarokConstants.DeckSize (od tega @TarokConstants.TrumpCount tarokov)</li>
 		<li>Za zmago: @TarokConstants.WinningCardPoints od @TarokConstants.TotalCardPoints točk</li>
+		<li>Nepobrisan radlc na koncu stane @TarokConstants.UncancelledRadlcPenalty točk</li>
 	</ul>
 </section>
-
-<section class="card-panel">
-	<h2>Preizkus interaktivnosti</h2>
-	<p>Razdeljenih partij v tej seji: <strong>@_dealCount</strong></p>
-	<button class="btn" @onclick="Deal">Razdeli</button>
-</section>
-
-@code {
-	private int _dealCount;
-
-	private void Deal() {
-		_dealCount++;
-	}
-}

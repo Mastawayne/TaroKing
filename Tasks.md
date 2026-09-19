@@ -227,12 +227,13 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: the game is clickable.
 
-- [ ] `TablePage` — 4 seats, table, current trick in the middle
-- [ ] Card component (SVG/CSS), fanned hand, hover, selection
-- [ ] Bidding panel, talon panel, announcement and kontra panel
-- [ ] Score sheet with radlci
-- [ ] Legal moves highlighted (illegal ones dimmed *and* rejected server-side)
-- [ ] Responsive layout (desktop + phone)
+- [x] `Table.razor` at `/miza` — 4 seats, table, current trick in the middle
+- [x] `CardView.razor` (CSS), fanned hand, hover, selection
+- [x] `ActionPanel.razor` — bidding, king call, talon, lay-away, upgrade, announcements and kontra
+- [x] `ScoreSheetView.razor` — running sheet with radlci and the final totals
+- [x] Legal moves highlighted (illegal ones dimmed *and* rejected server-side)
+- [x] Responsive layout (desktop + phone)
+- [x] `LocalGame` — scoped service holding the hand, three bots and the sheet; every click is an engine call
 
 **Acceptance**: a full hand against bots is played without opening the console; an illegal move sent from the client is rejected by the server.
 

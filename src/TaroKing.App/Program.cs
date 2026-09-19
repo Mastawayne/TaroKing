@@ -1,9 +1,13 @@
 using TaroKing.App.Components;
+using TaroKing.App.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
 	.AddInteractiveServerComponents();
+
+// One game per circuit: the table lives as long as the browser tab stays connected.
+builder.Services.AddScoped<LocalGame>();
 
 WebApplication app = builder.Build();
 
