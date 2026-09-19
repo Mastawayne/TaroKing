@@ -46,6 +46,18 @@ public sealed record PlayerView {
 	/// <summary>The partner, but only once the table legitimately knows who it is.</summary>
 	public int? KnownPartner { get; init; }
 
+	/// <summary>True when you are the declarer or the holder of the called king.</summary>
+	public bool YouAreDeclaringSide => Seat == Declarer || (KnownPartner is int partner && Seat == partner);
+
+	/// <summary>
+	/// Whether a seat is on your side, as far as you can tell. An unrevealed partner counts as an
+	/// opponent, which is exactly the position a defender is in at the table.
+	/// </summary>
+	public bool IsOnYourSide(int seat) =>
+		YouAreDeclaringSide
+			? seat == Declarer || seat == KnownPartner
+			: seat != Declarer && seat != KnownPartner;
+
 	public IReadOnlyList<TrickCard> CurrentTrick { get; init; } = [];
 
 	public IReadOnlyList<Trick> CompletedTricks { get; init; } = [];
@@ -58,6 +70,9 @@ public sealed record PlayerView {
 
 	/// <summary>How many trumps the declarer laid away, which is public; the cards themselves are not.</summary>
 	public int ShownDiscardCount { get; init; }
+
+	/// <summary>How many cards the declarer has to lay away.</summary>
+	public int DiscardCount { get; init; }
 
 	public IReadOnlyList<AnnouncedBonus> Announcements { get; init; } = [];
 
@@ -108,6 +123,7 @@ public sealed record PlayerView {
 			TalonPacketCount = hand.Talon?.Packets.Count ?? 0,
 			TakenTalonPacket = TakenPacket(hand),
 			ShownDiscardCount = hand.Talon?.ShownDiscards.Count ?? 0,
+			DiscardCount = hand.Talon?.Info.TalonCards ?? 0,
 			Announcements = hand.Announcements?.Announcements ?? [],
 			GameKontraMultiplier = hand.Announcements?.Multiplier(KontraTarget.Game) ?? 1,
 			LegalBids = hand.Phase == GamePhase.Bidding && hand.CurrentSeat == seat ? hand.Bidding.LegalBids() : [],

@@ -15,6 +15,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\TaroKing.Engine\TaroKing.Engine.csproj" />
+		<ProjectReference Include="..\..\src\TaroKing.Bots\TaroKing.Bots.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

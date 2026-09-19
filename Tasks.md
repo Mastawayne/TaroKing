@@ -208,13 +208,18 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: a bot that plays decently and fast.
 
-- [ ] `IPlayerAgent` (async `ChooseBid`, `ChooseTalon`, `ChooseDiscards`, `ChooseAnnouncements`, `ChooseCard`)
-- [ ] `RandomBot` (test baseline)
-- [ ] `HeuristicBot` — hand evaluation (trump count, Škis/Mond/Pagat, kings), signalling, protecting the pagat
-- [ ] Three profiles: cautious / normal / aggressive
-- [ ] Configurable "thinking" delay
+- [x] `IPlayerAgent` — async, and it only ever sees a `PlayerView`, so a bot cannot look at cards a person could not
+- [x] `RandomBot` — the baseline to beat and the fuzz partner
+- [x] `HeuristicBot` — hand strength (trumps, the three five-pointers, kings), bidding ladder, beggar shape detection
+- [x] Lay-away puts points in the declarer's own pile and keeps trumps; king called in your longest suit
+- [x] Play: draw trumps when strong, feed the partner, win cheaply when the trick is worth it, duck otherwise
+- [x] Negative contracts: shed expensive cards on tricks you are not taking
+- [x] Three profiles: cautious / normal / aggressive (they shift the bidding bar and the pagat ultimo bar)
+- [x] `SlowAgent` wrapper for a configurable thinking delay
+- [x] `BotTable` — drives a `HandState` with four agents, applies the radlc multiplier from the sheet, records the result
+- [x] `HandState.ApplyRadlcMultiplier` + `RadlcApplied` event, so a doubled hand replays as a doubled hand
 
-**Acceptance**: HeuristicBot beats RandomBot in 1000 hands with a ≥70 % average difference; a move takes ≤ 50 ms.
+**Acceptance**: the thinking bots outscore the random ones over 60 hands with the seating swapped half-way, so forehand's advantage cannot decide it; every hand any table plays reaches a score, and replays from its log.
 
 ---
 

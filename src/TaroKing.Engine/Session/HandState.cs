@@ -62,6 +62,12 @@ public sealed class HandState {
 
 	public GamePhase Phase { get; private set; } = GamePhase.Bidding;
 
+	/// <summary>
+	/// 2 when the declarer carries an uncancelled radlc, which doubles the whole hand. The session
+	/// sets it once the auction has named a declarer; it is in the log so a replay scores the same.
+	/// </summary>
+	public int RadlcMultiplier { get; private set; } = 1;
+
 	public IReadOnlyList<GameEvent> Events => _events;
 
 	/// <summary>The contract being played, once the auction is over — including a later upgrade.</summary>
@@ -100,6 +106,7 @@ public sealed class HandState {
 
 		foreach (GameEvent next in events.Skip(1)) {
 			switch (next) {
+				case RadlcApplied radlc: hand.ApplyRadlcMultiplier(radlc.Multiplier); break;
 				case BidPlaced bid: hand.PlaceBid(bid.Bidder, bid.Contract); break;
 				case BidPassed pass: hand.PassBid(pass.Bidder); break;
 				case KingCalled king: hand.CallKing(king.Declarer, king.Suit); break;
@@ -116,6 +123,20 @@ public sealed class HandState {
 		}
 
 		return hand;
+	}
+
+	/// <summary>Tell the hand that the declarer's radlc doubles it. Only between the auction and the score.</summary>
+	public void ApplyRadlcMultiplier(int multiplier) {
+		if (multiplier is not (1 or 2)) {
+			throw new ArgumentOutOfRangeException(nameof(multiplier), multiplier, "A radlc doubles a hand or it does not.");
+		}
+
+		if (Phase == GamePhase.Bidding || Phase == GamePhase.Finished) {
+			throw new InvalidOperationException("The radlc is applied after the auction and before the score.");
+		}
+
+		RadlcMultiplier = multiplier;
+		_events.Add(new RadlcApplied(multiplier));
 	}
 
 	// --- bidding ---
@@ -288,17 +309,21 @@ public sealed class HandState {
 	private void EnterPlay() {
 		Phase = GamePhase.Play;
 
+		ContractInfo info = Info!;
+		TalonPhase talon = Talon!;
+		int declarer = Declarer!.Value;
+
 		IReadOnlyList<Card>[] hands = new IReadOnlyList<Card>[TarokConstants.PlayerCount];
 		for (int seat = 0; seat < TarokConstants.PlayerCount; seat++) {
-			hands[seat] = seat == Declarer && Talon!.ChosenPacket is not null ? Talon.Hand : Deal.Hand(seat);
+			hands[seat] = seat == declarer && talon.ChosenPacket is not null ? talon.Hand : Deal.Hand(seat);
 		}
 
 		Tricks = TrickPlay.Start(
-			Info!,
+			info,
 			hands,
-			Info.ForehandLeads ? BiddingState.ForehandSeat : Declarer!.Value,
-			Info.IsKlop ? Talon!.KlopGifts : null,
-			new PlayContext { DeclarerSeat = Declarer!.Value, PartnerSeat = PartnerSeat });
+			info.ForehandLeads ? BiddingState.ForehandSeat : declarer,
+			info.IsKlop ? talon.KlopGifts : null,
+			new PlayContext { DeclarerSeat = declarer, PartnerSeat = PartnerSeat });
 	}
 
 	private void Finish() {
@@ -309,7 +334,8 @@ public sealed class HandState {
 				Info = Info,
 				DeclarerSeat = Declarer!.Value,
 				Tricks = Tricks!.Tricks,
-				KlopPiles = [Tricks.Won(0), Tricks.Won(1), Tricks.Won(2), Tricks.Won(3)]
+				KlopPiles = [Tricks.Won(0), Tricks.Won(1), Tricks.Won(2), Tricks.Won(3)],
+				RadlcMultiplier = RadlcMultiplier
 			});
 
 			return;
@@ -334,7 +360,8 @@ public sealed class HandState {
 			Tricks = Tricks!.Tricks,
 			CapturedMondSeats = Tricks.CapturedMondSeats,
 			Announcements = Announcements,
-			CalledKing = KingCall?.King
+			CalledKing = KingCall?.King,
+			RadlcMultiplier = RadlcMultiplier
 		});
 	}
 

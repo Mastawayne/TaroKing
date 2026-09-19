@@ -17,6 +17,9 @@ public abstract record GameEvent {
 
 public sealed record HandDealt(int Seed, bool CompulsoryKlop) : GameEvent;
 
+/// <summary>The session told the hand that the declarer is carrying a radlc, so it counts double.</summary>
+public sealed record RadlcApplied(int Multiplier) : GameEvent;
+
 public sealed record BidPlaced(int Bidder, Contract Contract) : GameEvent {
 	public override int? Seat => Bidder;
 }
