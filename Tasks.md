@@ -256,17 +256,23 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 **Goal**: real multiplayer on Blazor Server circuits.
 
-- [ ] `TableService` (singleton) — table list, seats, state, one authoritative `GameState` per table
-- [ ] Lobby: create a table (public/private, 3/4 players, timer), join, leave
-- [ ] Table options in valat.si's shape: number of rounds (7-30), seconds per move (1.5-4.5), minimum rating to sit down, members-only
-- [ ] Seed every hand from a cryptographic source and store the seed — the engine's PRNG stays deterministic for replay, but the seed must not be guessable (valat.si mixes atmospheric noise with /dev/urandom)
-- [ ] State broadcast per seat (everyone gets their own `PlayerView`)
-- [ ] Reconnect: a refresh or dropped connection does not kill the hand (60 s grace)
-- [ ] Move timer + auto-move on timeout
-- [ ] A bot takes over the seat of a player who drops
-- [ ] Table chat + spectators (no view of anyone's cards)
+- [x] `TableService` (singleton) — table list, seats, state, one authoritative `OnlineTable` per table
+- [x] `TableHeartbeat` (hosted service) — the table's own 250 ms clock; nothing waits on a browser
+- [x] Lobby `/lobi`: create a table (public/private, timer, bots on empty seats), join, leave
+- [x] Table options in valat.si's shape: rounds (7-30), seconds per move (1.5-4.5), minimum rating, members-only
+- [x] Seed every hand from `RandomNumberGenerator` and store it — deterministic for replay, unguessable in play
+- [x] State per seat: `PlayerView.For` per player, `PlayerView.ForSpectator` for watchers
+- [x] Reconnect: a refresh or dropped connection does not kill the hand (60 s grace, seat held)
+- [x] Move timer + auto-move on timeout (Fischer clock: increment per move, then the reserve)
+- [x] A bot takes over the seat of a player who drops, and hands it back on return
+- [x] Table chat + spectators (a watcher's view carries no cards and no legal moves at all)
+- [x] `Board.razor` — one felt shared by the local and online tables; `ITableActions` so one action panel drives both
+- [ ] Three-handed tarok (the lobby offers 3/4 seats on valat.si; the engine is strictly four-player)
+- [ ] `MembersOnly` is stored but inert, and every player is rated 1000, until accounts land in Phase 13
 
 **Acceptance**: 4 browsers play a full hand; killing one tab mid-hand hands the seat to a bot and gives it back on return; no client ever receives another player's cards (verified in the network log).
+
+**Note on "sekunde na potezo"**: implemented as a Fischer increment — every move gives the seat that many seconds back, and longer thinking eats a reserve bank (default 60 s). A hard 1.5-second guillotine would be unplayable, so this is the only reading of the valat.si range that makes sense. Worth confirming at a real table.
 
 ---
 

@@ -17,7 +17,11 @@ namespace TaroKing.Engine.Session;
 /// </summary>
 public sealed record PlayerView {
 
+	/// <summary>The seat this view belongs to, or -1 for a spectator who sits nowhere.</summary>
 	public required int Seat { get; init; }
+
+	/// <summary>A watcher rather than a player: sees the table, holds no cards, may do nothing.</summary>
+	public bool IsSpectator { get; init; }
 
 	public required GamePhase Phase { get; init; }
 
@@ -140,6 +144,49 @@ public sealed record PlayerView {
 			LegalPlays = hand.Phase == GamePhase.Play ? hand.Tricks!.LegalPlays(seat) : [],
 			Score = hand.Score
 		};
+	}
+
+	/// <summary>
+	/// The hand as somebody watching over the table's shoulder sees it: every card that has been
+	/// played, nobody's hand, and the partnership only once the table itself has worked it out.
+	/// </summary>
+	public static PlayerView ForSpectator(HandState hand) {
+		ArgumentNullException.ThrowIfNull(hand);
+
+		int? exposedSeat = ExposedSeatOf(hand);
+
+		return new PlayerView {
+			Seat = -1,
+			IsSpectator = true,
+			Phase = hand.Phase,
+			CurrentSeat = hand.CurrentSeat,
+			Hand = [],
+			HandSizes = [.. Enumerable.Range(0, TarokConstants.PlayerCount).Select(other => CardsInHand(hand, other).Count)],
+			ExposedSeat = exposedSeat,
+			ExposedHand = exposedSeat is null ? [] : CardsInHand(hand, exposedSeat.Value),
+			Contract = hand.PlayedContract,
+			Declarer = hand.Declarer,
+			CalledKingSuit = hand.KingCall?.Suit,
+			KnownPartner = PublicPartner(hand),
+			CurrentTrick = hand.Tricks?.CurrentTrick ?? [],
+			CompletedTricks = hand.Tricks?.Tricks ?? [],
+			TalonPacketCount = hand.Talon?.Packets.Count ?? 0,
+			TakenTalonPacket = TakenPacket(hand),
+			ShownDiscardCount = hand.Talon?.ShownDiscards.Count ?? 0,
+			DiscardCount = hand.Talon?.Info.TalonCards ?? 0,
+			Announcements = hand.Announcements?.Announcements ?? [],
+			GameKontraMultiplier = hand.Announcements?.Multiplier(KontraTarget.Game) ?? 1,
+			Score = hand.Score
+		};
+	}
+
+	/// <summary>The partner as the whole table knows it — never earlier than the called king falls.</summary>
+	private static int? PublicPartner(HandState hand) {
+		if (hand.KingCall is null || hand.PartnerSeat is not int partner) {
+			return null;
+		}
+
+		return hand.Phase == GamePhase.Finished || CalledKingHasFallen(hand) ? partner : null;
 	}
 
 	private static IReadOnlyList<Card> CardsInHand(HandState hand, int seat) {
