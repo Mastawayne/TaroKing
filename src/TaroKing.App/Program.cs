@@ -6,8 +6,8 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
 	.AddInteractiveServerComponents();
 
-// One game per circuit: the table lives as long as the browser tab stays connected.
-builder.Services.AddScoped<LocalGame>();
+// Games outlive the circuit, so refreshing the browser lands back on the same hand.
+builder.Services.AddSingleton<LocalGames>();
 
 WebApplication app = builder.Build();
 

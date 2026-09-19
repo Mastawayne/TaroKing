@@ -16,6 +16,9 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\TaroKing.Engine\TaroKing.Engine.csproj" />
 		<ProjectReference Include="..\..\src\TaroKing.Bots\TaroKing.Bots.csproj" />
+
+		<!-- For the session tests: LocalGame is the thing the table UI actually drives. -->
+		<ProjectReference Include="..\..\src\TaroKing.App\TaroKing.App.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

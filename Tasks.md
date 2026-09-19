@@ -241,10 +241,12 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 ## Phase 11 — Local game against bots (end to end)
 
-- [ ] "Quick game" — 1 human + 3 bots, instant start
-- [ ] Choose number of hands / play to X points
-- [ ] End screen with score sheet and session statistics
-- [ ] Saving and resuming an interrupted session
+- [x] "Quick game" — 1 human + 3 bots, instant start (`/miza` deals one straight away)
+- [x] Setup page `/nova-igra` — number of hands / play to X points / endless, table style, bot tempo
+- [x] End screen with standings, per-seat statistics and which contracts came up
+- [x] Saving and resuming an interrupted session — games live in `LocalGames`, keyed by the id in the URL
+- [x] `LocalGame.PlayOutAsync` — a bot takes the human's seat so a whole session can run headless
+- [ ] Rotate the deal so forehand moves around the table (needs an engine change: `ForehandSeat` is currently hard-coded to 0, and the score sheet indexes by engine seat)
 
 **Acceptance**: 10 consecutive hands without an error; refreshing the page mid-hand restores the state.
 

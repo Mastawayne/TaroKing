@@ -88,6 +88,7 @@ a.btn { display: inline-block; text-decoration: none; }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
 
 .btn-quiet { background: rgba(255, 255, 255, .14); color: var(--ink); }
+.btn-picked { outline: 2px solid var(--ink); outline-offset: 2px; }
 .btn-danger { background: var(--danger); color: #2a0d08; }
 .btn-note { opacity: .65; font-weight: 400; margin-left: 4px; }
 
@@ -323,6 +324,49 @@ a.btn { display: inline-block; text-decoration: none; }
 .sheet .final { color: var(--ink-dim); }
 .sheet .plus { color: #9fe0a8; }
 .sheet .minus { color: #f0a79b; }
+
+/* --- end of session --- */
+
+.summary { border-color: rgba(224, 176, 64, .45); }
+
+.standings {
+  list-style: none;
+  counter-reset: place;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.standings li {
+  counter-increment: place;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .06);
+}
+
+.standings li::before {
+  content: counter(place) ".";
+  color: var(--ink-dim);
+  min-width: 1.6em;
+}
+
+.standings li:first-child { background: rgba(224, 176, 64, .18); }
+.standings li.you .standing-name { color: var(--accent); font-weight: 700; }
+.standings .standing-name { flex: 1; }
+.standings .standing-score { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.stats { width: 100%; border-collapse: collapse; margin-top: 12px; font-variant-numeric: tabular-nums; }
+.stats th, .stats td { padding: 6px 10px; text-align: right; font-size: .88rem; }
+.stats th:first-child, .stats td:first-child { text-align: left; }
+.stats thead th { color: var(--ink-dim); border-bottom: 1px solid rgba(255, 255, 255, .16); font-weight: 600; }
+.stats tbody tr.you { background: rgba(224, 176, 64, .12); }
+.stats .plus { color: #9fe0a8; }
+.stats .minus { color: #f0a79b; }
 
 /* --- error strip --- */
 
