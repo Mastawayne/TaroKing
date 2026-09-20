@@ -38,3 +38,6 @@ appsettings.*.local.json
 ## OS
 Thumbs.db
 .DS_Store
+
+## Local review notes
+CodeReview.md

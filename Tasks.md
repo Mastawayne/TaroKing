@@ -287,7 +287,7 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 - [x] Last 30 games in history, each hand replayable against the bots — same seed, same chair (`SessionOptions.HumanSeat`)
 - [x] Player statistics: success rate per contract, average difference, pagat ultimo conversion
 - [x] Finished online tables are archived from the heartbeat; a member's session against bots from `LocalGame.Finished`
-- [ ] Generate the initial migration on a machine with the SDK: `dotnet tool install --global dotnet-ef` then `dotnet ef migrations add Initial --project src\TaroKing.Data --startup-project src\TaroKing.App`. Until it exists the app builds the schema with `EnsureCreated` and logs a warning.
+- [x] Initial migration generated (`src\TaroKing.Data\Migrations\20260920001450_Initial.cs`). A database created earlier by `EnsureCreated` must be deleted once, or `MigrateAsync` fails with "table already exists".
 
 **Acceptance**: migrations run on an empty database; a finished game shows up in history and moves the rating; the leaderboard matches the totals.
 
@@ -298,6 +298,7 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 ## Phase 14 — Polish and deploy
 
 - [ ] Sounds, dealing and trick-collecting animations
+- [x] Logo — crown badge "TK" (option B): `BrandLogo.razor` inline in the header (colours from `--logo-badge` / `--logo-letters`, falling back to `--accent` / `--felt-dark`, so a theme only sets two variables), Sora 800 wordmark, `wwwroot/favicon.svg` (switches to the light colours with `prefers-color-scheme`), static `wwwroot/logo-dark.svg`, `logo-blue.svg`, `logo-light.svg`
 - [ ] Themes (classic green / dark) + settings (speed, confirm move)
 - [ ] i18n: Slovenian by default, English second
 - [ ] Mobile layout (portrait)
@@ -310,8 +311,187 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 ## After v1
 
-- 3-player tarok (16 cards, no king calling, Mond penalty −21)
-- Tournaments and league seasons
-- Post-game analysis (where you lost points)
-- Stronger bot (MCTS with determinization of hidden cards)
-- Friends, private rooms, invites
+v1 = phases 0-14. Everything below is ordered by what unblocks what: first the things a live site
+needs to stay up and stay clean (15-16), then the rules work (17-18), then the features people
+ask for (19-23). Same commit rule: one phase = one commit (`Phase N - Name`).
+
+Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v2.0** = 20-22 · **v2.1** = 23.
+
+---
+
+## Phase 15 — Live tables survive a restart, and ops basics (v1.1)
+
+**Goal**: deploying a new version does not kill the hands being played, and you can see what the server is doing.
+
+- [ ] `LiveTableStore` — every event of an online hand is appended to the database as it happens (`LiveTables`, `LiveHands`, `LiveEvents`), not only at the end of the match
+- [ ] On startup `TableService` rebuilds every unfinished table from its log (`HandState.Replay`), seats held, clocks reset to the full reserve
+- [ ] Graceful shutdown: on `ApplicationStopping` stop dealing new hands, flush, tell the tables "strežnik se posodablja — igra se nadaljuje čez minuto"
+- [ ] Reconnect UI copes with a server that went away for up to 2 minutes (Blazor reconnect modal in Slovenian, automatic retry)
+- [ ] Archive queue with retry (the in-memory one from the review becomes durable)
+- [ ] Nightly SQLite backup (`VACUUM INTO`) with 14-day retention; restore procedure written down in `README.md`
+- [ ] Metrics: open tables, humans online, tick duration p50/p99, archive failures — OpenTelemetry → Prometheus endpoint `/metrics` (protected)
+- [ ] Load test project `tools/TaroKing.LoadTest`: N bot-only tables + M simulated circuits; record the ceiling per core in `README.md`
+- [ ] Optional PostgreSQL provider behind a config switch (`Database:Provider`), migrations for both
+
+**Acceptance**: `docker compose restart app` in the middle of a trick — all four browsers reconnect and the hand continues from the same card; 200 bot tables hold tick p99 < 50 ms on the production box; a backup restores into an empty container and history is intact.
+
+---
+
+## Phase 16 — Account lifecycle and moderation (v1.1)
+
+**Goal**: people can recover an account, leave, and be dealt with when they misbehave.
+
+- [ ] Optional e-mail on the account, confirmed by link; SMTP through configuration (no provider hard-coded)
+- [ ] Password reset by e-mail; change password and change e-mail on `/profil`
+- [ ] Delete my account (GDPR): user row anonymised, `MatchSeat.UserId` set null, name replaced with "izbrisan igralec", rating history removed
+- [ ] Export my data (JSON: profile, matches, rating history)
+- [ ] Roles: `Admin`, `Moderator` (Identity roles, seeded from configuration)
+- [ ] `/admin/prijave` — report queue from `BlacklistReport`: see the match, the chat, the reported player's history; actions: dismiss, warn, mute chat (timed), ban (timed / permanent)
+- [ ] Mute and ban are enforced server-side in `OnlineTable.Say` / `Sit` and at login
+- [ ] Personal block list: a player you blocked cannot sit at a table you host, and you do not see their chat
+- [ ] Chat word filter (Slovenian + English list in a file, not in code) and per-player chat rate limit
+- [ ] Audit log of every moderator action (who, what, when, why)
+- [ ] Privacy page + terms page (Slovenian), linked from registration
+
+**Acceptance**: reset link works once and expires after 1 hour; a banned account cannot log in or sit and sees why; deleting an account leaves every match it played readable with the name anonymised; every moderator action appears in the audit log.
+
+---
+
+## Phase 17 — Rule sets and house rules (v1.2)
+
+**Goal**: a table can choose its rules, and every stored hand knows which rules it was played under. Builds on the `RulesVersion` introduced by the code-review fixes.
+
+- [ ] `RuleSet` record in the engine — immutable, serialisable, carried by `HandDealt`; `RuleSet.ValatSi` is the default and the only one used for rated play
+- [ ] Options, each with a test pair (on/off):
+  - [ ] kontra on klop
+  - [ ] radlc end-of-session penalty (value)
+  - [ ] captured mond in klop
+  - [ ] "mond in the talon" penalty (−21 when the declarer leaves it)
+  - [ ] called king in the talon: declarer may pick it up / collects the rest of the talon by winning a trick with the king (the open item from Phases 3-4)
+  - [ ] compulsory klop on a hand without trumps (on/off)
+  - [ ] barvni valat upgrade after the talon (on/off)
+  - [ ] who writes the score: declaring side only / both sides
+  - [ ] calling a queen when you hold all four kings
+- [ ] Lobby: "pravila" section when opening a table, summarised on the table card; non-default rules mark the table **unrated**
+- [ ] History shows the rule set of each match; replay against bots uses the same rule set
+- [ ] `RuleSet` presets: `ValatSi`, `Domača miza` (editable), `Turnir` (used by Phase 22)
+
+**Acceptance**: every option has a hand-calculated test for both states; a match played with a custom rule set replays to identical scores; a rated table cannot be opened with anything but `ValatSi`.
+
+---
+
+## Phase 18 — Three-player tarok (v1.2)
+
+**Goal**: the lobby's 3/4 switch works. 16 cards each, no king calling, mond penalty −21.
+
+- [ ] `TableFormat` (players, hand size, talon size, trick count) replaces the constants in `TarokConstants`; every `new int[PlayerCount]` in the engine takes it from the format
+- [ ] `Deal` for three: 6 talon + 3 × 16, dealt in packets of 8
+- [ ] Contract table for three: no tri/dva/ena with a called king — every positive contract is a solo; bidding ladder and values per the three-handed rules (write the table into this file first, as was done for four)
+- [ ] `BiddingState`, `AnnouncementRound` (no kralj ultimo), `TrickPlay` (3 cards per trick, 16 tricks), `HandScorer` (mond −21), `ScoreSheet` for three columns
+- [ ] Emperor trick and must-beat rules re-checked for three cards on the table
+- [ ] `PlayerView`, `EventCodec`, `HandState.Replay` carry the format; stored four-player hands replay unchanged
+- [ ] `HeuristicBot` thresholds for 16-card hands; bot benchmark for three
+- [ ] `Board.razor` three-seat layout (desktop + portrait phone); lobby 3/4 option; `TableOptions.Seats` no longer fixed
+- [ ] Separate rating and leaderboard for three-handed play
+- [ ] Fuzz test: 10 000 random three-player hands, 48 cards in tricks, 6 in the talon
+
+**Acceptance**: three browsers play a full rated match; card points still total 70; all existing four-player tests pass untouched; a three-handed match shows up in history and moves only the three-handed rating.
+
+---
+
+## Phase 19 — Friends, private rooms, invites (v1.3)
+
+**Goal**: playing with the people you know takes one link.
+
+- [ ] Friend requests (send, accept, decline, remove); friends list with presence (online / at table X / offline) on `/prijatelji`
+- [ ] Invite link for a private table: signed token, expiry, optional seat reservation per invited friend
+- [ ] "Povabi" button at the table → in-app notification to online friends (toast with join button)
+- [ ] Reserved seats: a reserved chair is held for its guest until the host releases it
+- [ ] Host controls before the first deal: kick from seat, lock table, change options
+- [ ] "Revanša" — same four, same options, new table, one click for each player to accept
+- [ ] Head-to-head page: your record against one player (matches, average final score difference)
+- [ ] Private-table chat and history are visible only to those who sat there (closes review item L7 properly)
+- [ ] Friends-only tables: visible in the lobby to friends of the host only
+
+**Acceptance**: invite link → seated in ≤ 2 clicks for a logged-in friend and ≤ 3 for a guest; an expired or forged token is refused; a rematch table opens with all four seated in their old chairs; presence updates within 5 seconds.
+
+---
+
+## Phase 20 — Stronger bot (v2.0)
+
+**Goal**: a bot an experienced player respects, with selectable strength.
+
+- [ ] `CardTracker` — what has been played, who is void in what (from failures to follow), who cannot hold the called king, trump count outstanding; built only from `PlayerView`
+- [ ] `HandSampler` — deals the unseen cards consistently with everything the tracker knows (determinization), seeded, fast (≥ 5 000 samples/s)
+- [ ] `RolloutPolicy` — the current `HeuristicBot` play logic extracted so it can drive both the bot and the rollouts
+- [ ] `MctsBot` — perfect-information Monte Carlo over sampled worlds (start with flat PIMC, move to ISMCTS if PIMC's strategy-fusion shows in the benchmark); time budget per move, cancellable
+- [ ] Bidding and announcing by simulation: estimate the score distribution of each legal bid from sampled deals instead of the threshold table
+- [ ] Talon choice and lay-away by evaluation (needs the open talon from the review)
+- [ ] Partnership inference before the king falls (who plays like a partner)
+- [ ] Difficulty levels: lahek (heuristic) / srednji (MCTS 100 ms) / težek (MCTS 1 s); online fill-in bots use srednji
+- [ ] `tools/TaroKing.Arena` — bot-vs-bot league with duplicate deals and seat rotation, Elo per bot version, results committed as a markdown table
+- [ ] CI gate: a new bot version must not lose to the previous one over 2 000 duplicate deals
+- [ ] Thinking runs off the table's gate/heartbeat thread, with a hard deadline and the heuristic move as fallback
+
+**Acceptance**: težek beats the v1 heuristic bot by ≥ 15 points per hand over 2 000 duplicate deals with seats rotated; p99 move time ≤ budget + 50 ms; 50 tables with MCTS fill-ins keep tick p99 < 50 ms; the bot never sees anything that is not in its `PlayerView` (asserted by test, as today).
+
+---
+
+## Phase 21 — Post-game analysis (v2.0)
+
+**Goal**: after a match you can see where the points went.
+
+- [ ] Replay viewer `/partija/{id}/analiza/{hand}` — step through the event log forwards and backwards, all four hands face up (finished hands only), talon and lay-away shown
+- [ ] Per-decision evaluation: at each of your decisions the Phase 20 engine scores every legal option over sampled worlds *from your point of view at that moment*; the move you made is compared with the best
+- [ ] Double-dummy solver for the last 4-5 tricks (exact, all cards known) to mark real endgame errors separately from unlucky guesses
+- [ ] "Kje si izgubil točke": top 3 decisions of the hand by expected points lost, in plain Slovenian ("v 7. štihu bi s kraljem pobral 9 točk več")
+- [ ] Bidding review: expected score of what you bid vs. the alternatives, given only your 12 cards
+- [ ] Match summary: points lost in bidding / talon / announcements / play; trend over your last 30 matches on `/profil`
+- [ ] Analysis runs as a background job with a queue and a per-user daily limit; results cached in the database
+- [ ] Share link to one analysed hand (read-only, no chat, names optional)
+
+**Acceptance**: analysis of a 12-hand match finishes in < 60 s in the background; for the last five tricks the suggested line is provably optimal (solver-checked test positions); stepping through a replay never shows a hand that is still being played; the analysis of a hand is identical when run twice (seeded).
+
+---
+
+## Phase 22 — Tournaments and league seasons (v2.0)
+
+**Goal**: organised competition on top of the rating.
+
+- [ ] Seasons: quarterly, soft rating reset towards 1000 at the start, season leaderboard + all-time leaderboard, archive of past seasons
+- [ ] Divisions by rating at season start; promotion/relegation at season end; badge on the profile
+- [ ] Tournament entity: name, start time, format, rule set (`Turnir` from Phase 17), rounds, hands per round, entry limits
+- [ ] Format 1 — **duplicate rounds**: every table in a round plays the *same deals* (same seeds, same seat for the same role), so luck of the deal cancels out; ranking by total score
+- [ ] Format 2 — knockout of tables: top 2 of each table advance
+- [ ] Registration, check-in window, automatic seating (avoid seating friends together in duplicate rounds), late no-show → bot + forfeit flag
+- [ ] Round clock, automatic start of each round, waiting room between rounds, live standings page
+- [ ] Anti-collusion in duplicate play: seeds are generated at round start, never stored client-side, and tables of one round finish before any of its hands become viewable in history
+- [ ] Organiser tools (`Moderator` role): create, pause, replace a player with a bot, void a table
+- [ ] Results page per tournament, permanent; winners on the home page
+
+**Acceptance**: a 16-player, 3-round duplicate tournament runs unattended from check-in to final standings with 16 bot clients; identical deals are verified across tables of a round; a player dropping mid-round does not stall the round; season rollover is a single idempotent job.
+
+---
+
+## Phase 23 — Installable app and notifications (v2.1)
+
+**Goal**: TaroKing behaves like an app on a phone.
+
+- [ ] PWA manifest, icons, splash, offline shell page ("ni povezave — poskušam znova")
+- [ ] Web Push (VAPID): "na potezi si" when the tab is in the background, "miza se začenja", friend invite, tournament round starting; per-type switches on `/profil`
+- [ ] Wake-lock while seated at a table; vibration on your turn (setting)
+- [ ] Touch: drag a card to play, long-press for a larger view, one-thumb layout for the action panel
+- [ ] Spectator delay option for public tables (views lag by one trick) so watching cannot help a player
+- [ ] Bandwidth: measure render batch size per tick at a full table; trim `Board.razor` re-renders to the seats that changed
+- [ ] Accessibility pass: keyboard play for every action, screen-reader labels for cards ("srčev kralj"), colour-blind suit markers
+
+**Acceptance**: installs from Chrome on Android and from Safari on iOS; a push arrives within 5 s of your turn starting with the tab closed; a full hand is playable with the keyboard only; Lighthouse PWA and accessibility ≥ 90.
+
+---
+
+## Backlog (not scheduled)
+
+- Native wrapper (MAUI Blazor Hybrid) if the PWA proves too limited on iOS
+- Other tarok variants (Croatian, Austrian Königrufen) on the same engine through `RuleSet` + `TableFormat`
+- Public read-only API for statistics
+- Training mode: the bot explains its move while you play
