@@ -1,21 +1,31 @@
 <!DOCTYPE html>
-<html lang="sl">
+<html lang="sl" data-theme="dark">
 
 <head>
 	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 	<base href="/" />
 	<link rel="icon" type="image/svg+xml" href="favicon.svg" />
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@800&display=swap" />
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" />
 	<link rel="stylesheet" href="@Assets["app.css"]" />
+	<script>
+		/* The scheme is applied before the first paint, so a light-scheme user never sees a dark flash. */
+		try {
+			var theme = localStorage.getItem("tk-theme");
+			if (theme === "light" || theme === "blue" || theme === "dark") {
+				document.documentElement.dataset.theme = theme;
+			}
+		} catch (e) { }
+	</script>
 	<ImportMap />
 	<HeadOutlet @rendermode="InteractiveServer" />
 </head>
 
 <body>
 	<Routes @rendermode="InteractiveServer" />
+	<script src="@Assets["taroking.js"]"></script>
 	<script src="_framework/blazor.web.js"></script>
 </body>
 

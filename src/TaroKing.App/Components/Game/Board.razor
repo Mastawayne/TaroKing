@@ -5,169 +5,219 @@
 @using TaroKing.Engine.Play
 @using TaroKing.Engine.Session
 
-@*
-	The felt itself: four seats, the trick in the middle, your own hand along the bottom. It draws
-	whatever the server says this seat may see and nothing else, and it decides nothing — a click
-	goes back up as an engine call that the server is free to refuse.
-
-	A spectator has no seat, so the table is drawn from seat 0's side and the bottom row stays empty.
-*@
-
-<div class="table-header">
-	<span class="chip">@PhaseName(View.Phase)</span>
-
-	@if (View.Contract is Contract contract) {
-		<span class="chip chip-accent">@Contracts.Info(contract).SlovenianName</span>
-		<span class="chip">igralec: @NameOf(View.Declarer ?? 0)</span>
-	}
-
-	@if (View.CalledKingSuit is Suit called) {
-		<span class="chip @($"suit-{called.ToString().ToLowerInvariant()}")">klican @called.Symbol()</span>
-	}
-
-	@if (View.KnownPartner is int partner && partner != View.Declarer) {
-		<span class="chip">soigralec: @NameOf(partner)</span>
-	}
-
-	@if (View.GameKontraMultiplier > 1) {
-		<span class="chip chip-danger">×@View.GameKontraMultiplier</span>
-	}
-
-	@if (Radlc) {
-		<span class="chip chip-danger">radlc ×2</span>
-	}
-
-	@if (View.IsSpectator) {
-		<span class="chip">gledaš</span>
-	}
-</div>
-
-@if (View.Announcements.Count > 0) {
-	<div class="table-header">
-		@foreach (AnnouncedBonus announced in View.Announcements) {
-			<span class="chip chip-accent">@Bonuses.Info(announced.Kind).SlovenianName — @NameOf(announced.Seat)</span>
-		}
-	</div>
-}
-
-<div class="table @(Busy ? "table-busy" : null)">
-
-	@foreach (SeatSlot slot in OtherSeats) {
-		<div class="seat seat-@slot.Position @(View.CurrentSeat == slot.Index ? "seat-active" : null)">
-			<div class="seat-name">@NameOf(slot.Index)</div>
-			<div class="seat-badges">
-				@if (View.Declarer == slot.Index) {
-					<span class="badge">igralec</span>
-				}
-				@if (View.KnownPartner == slot.Index && View.Declarer != slot.Index) {
-					<span class="badge">soigralec</span>
-				}
-				@if (SeatNote is not null) {
-					@SeatNote(slot.Index)
-				}
-			</div>
-			<div class="seat-cards" title="@(View.HandSizes[slot.Index]) kart">
-				@for (int card = 0; card < View.HandSizes[slot.Index]; card++) {
-					<span class="card-back"></span>
-				}
-			</div>
-		</div>
-	}
-
-	<div class="trick">
-		@if (View.CurrentTrick.Count == 0 && View.CompletedTricks.Count > 0) {
-			<p class="trick-note">
-				@(View.CompletedTricks.Count). štih je pobral @NameOf(View.CompletedTricks[^1].WinnerSeat)
-			</p>
-		}
-
-		@foreach (TrickCard played in View.CurrentTrick) {
-			<div class="trick-slot trick-@PositionOf(Anchor, played.Seat)">
-				<CardView Card="played.Card" />
-				<span class="trick-owner">@NameOf(played.Seat)</span>
-			</div>
-		}
-
-		@if (View.TakenTalonPacket.Count > 0 && View.Phase == GamePhase.Talon) {
-			<div class="talon-shown">
-				<span class="trick-note">talon</span>
-				@foreach (Card card in View.TakenTalonPacket) {
-					<CardView Card="card" Small="true" />
-				}
-			</div>
-		}
-	</div>
-
-	<div class="seat seat-south @(View.CurrentSeat == Anchor ? "seat-active" : null)">
-		<div class="seat-name">
-			@NameOf(Anchor)
-			@if (View.Declarer == Anchor) {
-				<span class="badge">igralec</span>
-			}
-			@if (SeatNote is not null) {
-				@SeatNote(Anchor)
-			}
-		</div>
-
-		@*
-			Your own cards are in the row below the table, so the south chair only shows a fan when
-			you are watching somebody else sit in it.
-		*@
-		@if (View.IsSpectator) {
-			<div class="seat-cards" title="@(View.HandSizes[Anchor]) kart">
-				@for (int card = 0; card < View.HandSizes[Anchor]; card++) {
-					<span class="card-back"></span>
-				}
-			</div>
-		}
-	</div>
-
-</div>
-
-@if (View.ExposedSeat is int exposed && exposed != View.Seat) {
-	<section class="card-panel">
-		<h2>Odprta roka — @NameOf(exposed)</h2>
-		<div class="hand-row">
-			@foreach (Card card in View.ExposedHand) {
-				<CardView Card="card" Small="true" />
-			}
-		</div>
-	</section>
-}
+@inject IJSRuntime Js
 
 @*
-	The hand is clickable only while cards are being played; during the lay-away the action panel
-	shows its own copy, so the row would only be in the way.
-*@
-@if (ShowOwnHand && View.Hand.Count > 0) {
-	<div class="hand-row own-hand">
-		@foreach (Card card in View.Hand) {
-			@if (View.Phase == GamePhase.Play) {
-				<CardView Card="card" Legal="IsPlayable(card)" OnSelect="OnPlay" />
-			} else {
-				<CardView Card="card" />
-			}
-		}
-	</div>
-}
+	The whole table: the info strip on top, the felt with four seats and the trick, the action strip,
+	your hand along the bottom — and the side column with the score sheet and (online) the chat.
 
-@if (View.CompletedTricks.Count > 0) {
-	<section class="card-panel">
-		<h2>Zadnji štih</h2>
-		<div class="hand-row">
-			@foreach (TrickCard played in View.CompletedTricks[^1].Cards) {
-				<CardView Card="played.Card"
-						  Small="true"
-						  Selected="played.Seat == View.CompletedTricks[^1].WinnerSeat" />
+	It draws whatever the server says this seat may see and nothing else, and it decides nothing —
+	a click goes back up as an engine call that the server is free to refuse.
+
+	A spectator has no seat, so the table is drawn from seat 0's side and the hand row stays empty.
+*@
+
+<div class="miza @(Free ? "free" : null)">
+
+	<div class="centre">
+
+		<div class="info">
+			@Chips
+			<span class="chip">@PhaseName(View.Phase)</span>
+
+			@if (View.Contract is Contract contract) {
+				<span class="chip strong">@Contracts.Info(contract).SlovenianName</span>
+				<span class="chip">Igra: @NameOf(View.Declarer ?? 0)</span>
+			}
+
+			@if (View.CalledKingSuit is Suit called) {
+				<span class="chip">Klican: @called.SlovenianName() @called.Symbol()</span>
+			}
+
+			@if (View.KnownPartner is int partner && partner != View.Declarer) {
+				<span class="chip">Soigralec: @NameOf(partner)</span>
+			}
+
+			@foreach (AnnouncedBonus announced in View.Announcements) {
+				<span class="chip strong">@Bonuses.Info(announced.Kind).SlovenianName · @NameOf(announced.Seat)</span>
+			}
+
+			@if (View.GameKontraMultiplier > 1) {
+				<span class="chip bad">@KontraName(View.GameKontraMultiplier)</span>
+			}
+
+			@if (Radlc) {
+				<span class="chip bad">Radlc ×2</span>
+			}
+
+			@if (View.IsSpectator) {
+				<span class="chip">Gledaš</span>
+			}
+
+			<span class="tools">
+				<button type="button" aria-pressed="@_sheetOpen" @onclick="ToggleSheet">Zapisnik</button>
+				@if (Chat is not null) {
+					<button type="button" aria-pressed="@_chatOpen" @onclick="ToggleChat">Klepet</button>
+				}
+			</span>
+		</div>
+
+		<div class="felt @(Busy ? "felt-busy" : null)">
+			<div class="ring @(View.IsSpectator ? "ring-spectator" : null)">
+
+				@foreach (SeatSlot slot in OtherSeats) {
+					<div class="seat seat-@slot.Position @(View.CurrentSeat == slot.Index ? "seat-active" : null)">
+						<div class="seat-name">
+							@NameOf(slot.Index)
+							@if (View.Declarer == slot.Index) {
+								<span class="badge">igra</span>
+							}
+							@if (View.KnownPartner == slot.Index && View.Declarer != slot.Index) {
+								<span class="badge">soigralec</span>
+							}
+						</div>
+						<div class="seat-meta">
+							<span class="backs" title="@(View.HandSizes[slot.Index]) kart">
+								@for (int card = 0; card < View.HandSizes[slot.Index]; card++) {
+									<span></span>
+								}
+							</span>
+							@if (SeatNote is not null) {
+								@SeatNote(slot.Index)
+							}
+						</div>
+					</div>
+				}
+
+				<div class="trick">
+					@foreach (TrickCard played in View.CurrentTrick) {
+						<div class="trick-slot trick-@PositionOf(Anchor, played.Seat)">
+							<CardView Card="played.Card" Size="CardView.CardSize.Trick" />
+							<span>@NameOf(played.Seat)</span>
+						</div>
+					}
+
+					@if (AwaitsOwnCard) {
+						<div class="trick-slot trick-south"><div class="trick-empty"></div></div>
+					}
+
+					@if (View.TakenTalonPacket.Count > 0 && View.Phase == GamePhase.Talon) {
+						<div class="trick-centre">
+							<span>talon</span>
+							<div class="talon-shown">
+								@foreach (Card card in View.TakenTalonPacket) {
+									<CardView Card="card" Size="CardView.CardSize.Small" />
+								}
+							</div>
+						</div>
+					} else if (View.CurrentTrick.Count == 0 && View.CompletedTricks.Count > 0 && View.Phase == GamePhase.Play) {
+						<div class="trick-centre">
+							<span>@(View.CompletedTricks.Count). štih je pobral @NameOf(View.CompletedTricks[^1].WinnerSeat)</span>
+						</div>
+					}
+
+					@if (View.CurrentTrick.Count > 0) {
+						<p class="trick-note">@TrickNote</p>
+					}
+				</div>
+
+				@*
+					You are always south; your cards are in the row below, so the south chair shows a fan
+					only when you are watching somebody else sit in it.
+				*@
+				@if (View.IsSpectator) {
+					<div class="seat seat-south @(View.CurrentSeat == Anchor ? "seat-active" : null)">
+						<div class="seat-name">
+							@NameOf(Anchor)
+							@if (View.Declarer == Anchor) {
+								<span class="badge">igra</span>
+							}
+						</div>
+						<div class="seat-meta">
+							<span class="backs" title="@(View.HandSizes[Anchor]) kart">
+								@for (int card = 0; card < View.HandSizes[Anchor]; card++) {
+									<span></span>
+								}
+							</span>
+							@if (SeatNote is not null) {
+								@SeatNote(Anchor)
+							}
+						</div>
+					</div>
+				}
+			</div>
+
+			@if (View.ExposedSeat is int exposed && exposed != View.Seat) {
+				<div class="exposed">
+					<span>Odprta roka — @NameOf(exposed)</span>
+					<div class="row">
+						@foreach (Card card in View.ExposedHand) {
+							<CardView Card="card" Size="CardView.CardSize.Small" />
+						}
+					</div>
+				</div>
 			}
 		</div>
-		<p class="hint">Pobral ga je @NameOf(View.CompletedTricks[^1].WinnerSeat).</p>
-	</section>
-}
+
+		<div class="below">
+			@Actions
+		</div>
+
+		@if (!View.IsSpectator && View.Hand.Count > 0) {
+			<div class="hand">
+				@foreach (Card card in View.Hand) {
+					@if (Discarding) {
+						<CardView Card="card"
+								  Legal="View.LegalDiscards.Contains(card)"
+								  Selected="Pick!.Contains(card)"
+								  OnSelect="ToggleDiscard" />
+					} else if (View.Phase == GamePhase.Play) {
+						<CardView Card="card" Legal="IsPlayable(card)" OnSelect="OnPlay" />
+					} else {
+						<CardView Card="card" />
+					}
+				}
+			</div>
+		}
+	</div>
+
+	<aside class="side">
+		@if (_sheetOpen) {
+			<section class="panel sheet">
+				<h2>Zapisnik<span class="sp"></span><button type="button" class="hide" aria-label="Skrij zapisnik" @onclick="ToggleSheet">×</button></h2>
+				@Sheet
+			</section>
+		}
+
+		@if (View.CompletedTricks.Count > 0) {
+			<section class="panel last-trick">
+				<div class="row">
+					@foreach (TrickCard played in View.CompletedTricks[^1].Cards) {
+						<CardView Card="played.Card"
+								  Size="CardView.CardSize.Small"
+								  Selected="played.Seat == View.CompletedTricks[^1].WinnerSeat" />
+					}
+				</div>
+				<span class="who">zadnji štih · @NameOf(View.CompletedTricks[^1].WinnerSeat)</span>
+			</section>
+		}
+
+		@if (_chatOpen && Chat is not null) {
+			<section class="panel chat">
+				<h2>Za mizo<span class="sp"></span><button type="button" class="hide" aria-label="Skrij klepet" @onclick="ToggleChat">×</button></h2>
+				@Chat
+			</section>
+		}
+	</aside>
+
+</div>
 
 @code {
 
 	public readonly record struct SeatSlot(int Index, string Position);
+
+	private bool _sheetOpen = true;
+	private bool _chatOpen = true;
 
 	[Parameter, EditorRequired]
 	public PlayerView View { get; set; } = default!;
@@ -184,17 +234,55 @@
 	public bool Radlc { get; set; }
 
 	[Parameter]
-	public bool ShowOwnHand { get; set; } = true;
-
-	[Parameter]
 	public EventCallback<Card> OnPlay { get; set; }
+
+	/// <summary>The lay-away in progress, while there is one; the hand becomes a picker.</summary>
+	[Parameter]
+	public DiscardPick? Pick { get; set; }
+
+	/// <summary>Extra chips at the front of the info strip — the table's name, the round counter.</summary>
+	[Parameter]
+	public RenderFragment? Chips { get; set; }
 
 	/// <summary>An extra badge per seat — a clock, an "away", whatever the table wants to say.</summary>
 	[Parameter]
 	public RenderFragment<int>? SeatNote { get; set; }
 
+	/// <summary>The action strip between the felt and the hand.</summary>
+	[Parameter]
+	public RenderFragment? Actions { get; set; }
+
+	/// <summary>The score sheet's table, drawn by the page.</summary>
+	[Parameter]
+	public RenderFragment? Sheet { get; set; }
+
+	/// <summary>The chat, when the table has one.</summary>
+	[Parameter]
+	public RenderFragment? Chat { get; set; }
+
 	/// <summary>A spectator sits nowhere, so the table is drawn from forehand's side.</summary>
 	private int Anchor => View.IsSpectator ? 0 : View.Seat;
+
+	private bool Free => !_sheetOpen && (!_chatOpen || Chat is null);
+
+	private bool Discarding => Pick is not null && View.Phase == GamePhase.Talon && !View.AwaitsUpgradeDecision && View.LegalDiscards.Count > 0;
+
+	/// <summary>A dashed outline where your card will land, while the trick waits for it.</summary>
+	private bool AwaitsOwnCard =>
+		View.Phase == GamePhase.Play
+		&& !View.IsSpectator
+		&& View.CurrentTrick.Count > 0
+		&& View.CurrentTrick.Count < TarokConstants.PlayerCount
+		&& View.CurrentTrick.All(played => played.Seat != View.Seat);
+
+	private string TrickNote {
+		get {
+			Card led = View.CurrentTrick[0].Card;
+			string suit = led.IsTrump ? "tarok" : led.Suit.SlovenianName();
+
+			return $"{View.CompletedTricks.Count + 1}. štih · vodi {suit}";
+		}
+	}
 
 	private IEnumerable<SeatSlot> OtherSeats {
 		get {
@@ -217,12 +305,57 @@
 	private bool IsPlayable(Card card) =>
 		View.Phase == GamePhase.Play && View.IsYourTurn && View.LegalPlays.Contains(card);
 
+	private void ToggleDiscard(Card card) => Pick?.Toggle(card, View.DiscardCount);
+
 	private static string PhaseName(GamePhase phase) => phase switch {
-		GamePhase.Bidding => "licitacija",
-		GamePhase.KingCall => "klicanje kralja",
-		GamePhase.Talon => "talon",
-		GamePhase.Announcing => "napovedi",
-		GamePhase.Play => "igra",
-		_ => "konec"
+		GamePhase.Bidding => "Licitacija",
+		GamePhase.KingCall => "Klicanje kralja",
+		GamePhase.Talon => "Talon",
+		GamePhase.Announcing => "Napovedi",
+		GamePhase.Play => "Igra",
+		_ => "Konec partije"
 	};
+
+	private static string KontraName(int multiplier) => multiplier switch {
+		2 => "Kontra ×2",
+		4 => "Rekontra ×4",
+		8 => "Subkontra ×8",
+		_ => $"Mordkontra ×{multiplier}"
+	};
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		if (!firstRender) {
+			return;
+		}
+
+		try {
+			string? saved = await Js.InvokeAsync<string?>("taroking.getPref", "tk-panels");
+			if (saved is not null) {
+				_sheetOpen = saved.Contains('s');
+				_chatOpen = saved.Contains('c');
+				StateHasChanged();
+			}
+		} catch (Exception ex) when (ex is JSException or JSDisconnectedException) {
+			// No storage — both panels stay open.
+		}
+	}
+
+	private Task ToggleSheet() {
+		_sheetOpen = !_sheetOpen;
+
+		return SavePanelsAsync();
+	}
+
+	private Task ToggleChat() {
+		_chatOpen = !_chatOpen;
+
+		return SavePanelsAsync();
+	}
+
+	private async Task SavePanelsAsync() {
+		try {
+			await Js.InvokeVoidAsync("taroking.setPref", "tk-panels", $"{(_sheetOpen ? "s" : "")}{(_chatOpen ? "c" : "")}");
+		} catch (Exception ex) when (ex is JSException or JSDisconnectedException) {
+		}
+	}
 }

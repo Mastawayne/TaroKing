@@ -1,0 +1,71 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+
+@inject IJSRuntime Js
+
+@*
+	The bar along the top of every page: brand, the four places to go, the colour scheme and who
+	you are. The scheme is a browser preference — it is applied by taroking.js before Blazor even
+	starts, and this picker only changes it from then on.
+*@
+
+<header class="top">
+	<a class="brand" href="/" aria-label="TaroKing">
+		<BrandLogo />
+		<span class="brand-word" aria-hidden="true">Taro<span class="brand-king">King</span></span>
+	</a>
+	<nav>
+		<NavLink href="/" Match="NavLinkMatch.All">Domov</NavLink>
+		<NavLink href="/nova-igra">Proti botom</NavLink>
+		<NavLink href="/lobi">Spletne mize</NavLink>
+		<NavLink href="/lestvica">Lestvica</NavLink>
+	</nav>
+	<span class="sp"></span>
+	<div class="theme-pick" role="group" aria-label="Barvna shema">
+		<button type="button" class="t-dark" title="Temna" aria-label="Temna shema" aria-pressed="@(_theme == "dark")" @onclick="@(() => PickAsync("dark"))"></button>
+		<button type="button" class="t-light" title="Svetla" aria-label="Svetla shema" aria-pressed="@(_theme == "light")" @onclick="@(() => PickAsync("light"))"></button>
+		<button type="button" class="t-blue" title="Modra" aria-label="Modra shema" aria-pressed="@(_theme == "blue")" @onclick="@(() => PickAsync("blue"))"></button>
+	</div>
+	<div class="account">
+		<AuthorizeView>
+			<Authorized>
+				<a class="me" href="/zgodovina">@context.User.Identity?.Name</a>
+				<form method="post" action="/account/logout" class="inline-form">
+					<AntiforgeryToken />
+					<input type="hidden" name="ReturnUrl" value="/" />
+					<button type="submit" class="link-button">Odjava</button>
+				</form>
+			</Authorized>
+			<NotAuthorized>
+				<a href="/prijava">Prijava</a>
+				<a href="/registracija">Registracija</a>
+			</NotAuthorized>
+		</AuthorizeView>
+	</div>
+</header>
+
+@code {
+
+	private string _theme = "dark";
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		if (!firstRender) {
+			return;
+		}
+
+		try {
+			string? saved = await Js.InvokeAsync<string?>("taroking.getPref", "tk-theme");
+			if (saved is "light" or "blue" or "dark") {
+				_theme = saved;
+				StateHasChanged();
+			}
+		} catch (Exception ex) when (ex is JSException or JSDisconnectedException) {
+			// Storage blocked or the circuit already gone: the default stays.
+		}
+	}
+
+	private async Task PickAsync(string theme) {
+		_theme = theme;
+		await Js.InvokeVoidAsync("taroking.setTheme", theme);
+	}
+}

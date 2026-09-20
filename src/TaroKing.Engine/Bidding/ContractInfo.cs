@@ -49,7 +49,7 @@ public static class Contracts {
 			CountsCardPoints: true, ScoresDifference: true, AllowsBonuses: true, UsesNegativePlayRules: false,
 			TrumpsArePlainSuit: false, ForehandLeads: true, ForehandOnly: true),
 
-		new(Contract.Two, "dva", GameValue: 20, TalonCards: 2,
+		new(Contract.Two, "dve", GameValue: 20, TalonCards: 2,
 			CallsKing: true, IsSolo: false, IsKlop: false, TakesNoTricks: false, TakesAllTricks: false,
 			CountsCardPoints: true, ScoresDifference: true, AllowsBonuses: true, UsesNegativePlayRules: false,
 			TrumpsArePlainSuit: false, ForehandLeads: true, ForehandOnly: false),
@@ -64,7 +64,7 @@ public static class Contracts {
 			CountsCardPoints: true, ScoresDifference: true, AllowsBonuses: true, UsesNegativePlayRules: false,
 			TrumpsArePlainSuit: false, ForehandLeads: true, ForehandOnly: false),
 
-		new(Contract.SoloTwo, "solo dva", GameValue: 50, TalonCards: 2,
+		new(Contract.SoloTwo, "solo dve", GameValue: 50, TalonCards: 2,
 			CallsKing: false, IsSolo: true, IsKlop: false, TakesNoTricks: false, TakesAllTricks: false,
 			CountsCardPoints: true, ScoresDifference: true, AllowsBonuses: true, UsesNegativePlayRules: false,
 			TrumpsArePlainSuit: false, ForehandLeads: true, ForehandOnly: false),

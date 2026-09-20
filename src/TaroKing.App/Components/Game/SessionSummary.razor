@@ -52,8 +52,8 @@
 
 	@if (OnPlayAgain.HasDelegate) {
 		<div class="button-row">
-			<button class="btn" @onclick="OnPlayAgain">še ena sezija</button>
-			<a class="btn btn-quiet" href="/nova-igra">druge nastavitve</a>
+			<button class="btn" @onclick="OnPlayAgain">Še ena seja</button>
+			<a class="btn btn-quiet" href="/nova-igra">Druge nastavitve</a>
 		</div>
 	}
 </section>
@@ -64,7 +64,7 @@
 	public SessionStats Stats { get; set; } = default!;
 
 	[Parameter]
-	public string Title { get; set; } = "Konec sezije";
+	public string Title { get; set; } = "Konec seje";
 
 	/// <summary>The reader's own seat, if they had one.</summary>
 	[Parameter]

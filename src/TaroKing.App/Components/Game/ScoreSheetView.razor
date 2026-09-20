@@ -4,64 +4,63 @@
 @using TaroKing.Engine.Scoring
 
 @*
-	The running sheet. Radlci are shown as the little wheels they are drawn as on paper: while you
+	The running sheet — just the table, so the board can put it in its side panel and the match
+	page in a panel of its own. Radlci are drawn as the little wheels they are on paper: while you
 	carry one, the game you declare counts double, and whatever is left at the end costs 100 each.
 *@
 
-<section class="sheet">
-	<h2>Štrafta</h2>
+<table>
+	<thead>
+		<tr>
+			<th>#</th>
+			<th>igra</th>
+			@for (int seat = 0; seat < TarokConstants.PlayerCount; seat++) {
+				<th class="@(seat == YouSeat ? "you" : null)">@(seat == YouSeat ? "Ti" : NameOf(seat))</th>
+			}
+		</tr>
+	</thead>
 
-	<table>
-		<thead>
+	<tbody>
+		@if (Records.Count == 0) {
+			<tr class="empty">
+				<td colspan="@(TarokConstants.PlayerCount + 2)">Še ni odigrane partije.</td>
+			</tr>
+		}
+
+		@foreach (HandRecord record in Records) {
 			<tr>
-				<th>#</th>
-				<th>igra</th>
+				<td class="muted">@record.Number</td>
+				<td class="muted" title="@($"igral je {NameOf(record.Declarer)}")">@Contracts.Info(record.Contract).SlovenianName</td>
 				@for (int seat = 0; seat < TarokConstants.PlayerCount; seat++) {
-					<th class="@(seat == YouSeat ? "you" : null)">@NameOf(seat)</th>
+					<td class="@Sign(record.Scores[seat])">@Signed(record.Scores[seat])</td>
 				}
 			</tr>
-		</thead>
+		}
+	</tbody>
 
-		<tbody>
-			@if (Records.Count == 0) {
-				<tr class="empty">
-					<td colspan="@(TarokConstants.PlayerCount + 2)">Še nobene odigrane partije.</td>
-				</tr>
+	<tfoot>
+		<tr class="totals">
+			<td colspan="2">skupaj</td>
+			@for (int seat = 0; seat < TarokConstants.PlayerCount; seat++) {
+				<td class="@Sign(Sheet.Totals[seat])">@Signed(Sheet.Totals[seat])</td>
 			}
-
-			@foreach (HandRecord record in Records) {
-				<tr>
-					<td class="muted">@record.Number</td>
-					<td class="muted" title="@NameOf(record.Declarer)">@Contracts.Info(record.Contract).SlovenianName</td>
-					@for (int seat = 0; seat < TarokConstants.PlayerCount; seat++) {
-						<td class="@Sign(record.Scores[seat])">@Signed(record.Scores[seat])</td>
-					}
-				</tr>
+		</tr>
+		<tr class="radlci">
+			<td colspan="2">radlci</td>
+			@for (int seat = 0; seat < TarokConstants.PlayerCount; seat++) {
+				<td title="@(Sheet.Radlci[seat]) radlc(ev)">@Wheels(Sheet.Radlci[seat])</td>
 			}
-		</tbody>
-
-		<tfoot>
-			<tr class="totals">
-				<td colspan="2">skupaj</td>
-				@for (int seat = 0; seat < TarokConstants.PlayerCount; seat++) {
-					<td class="@Sign(Sheet.Totals[seat])">@Signed(Sheet.Totals[seat])</td>
-				}
-			</tr>
-			<tr class="radlci">
-				<td colspan="2">radlci</td>
-				@for (int seat = 0; seat < TarokConstants.PlayerCount; seat++) {
-					<td title="@(Sheet.Radlci[seat]) radlc(ev)">@Wheels(Sheet.Radlci[seat])</td>
-				}
-			</tr>
+		</tr>
+		@if (Sheet.Radlci.Any(count => count > 0)) {
 			<tr class="final">
 				<td colspan="2">z radlci</td>
 				@foreach (int total in Sheet.FinalTotals()) {
 					<td class="@Sign(total)">@Signed(total)</td>
 				}
 			</tr>
-		</tfoot>
-	</table>
-</section>
+		}
+	</tfoot>
+</table>
 
 @code {
 

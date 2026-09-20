@@ -1,5 +1,6 @@
 @page "/miza"
 @page "/miza/{SessionId}"
+@layout TableLayout
 
 @using TaroKing.App.Components.Game
 @using TaroKing.App.Services
@@ -24,25 +25,21 @@
 
 @if (_missing) {
 
-	<section class="card-panel intro">
-		<h2>Te igre ni več</h2>
-		<p class="lead">Miza je bila predolgo prazna in smo jo pospravili. Nova je ena poteza stran.</p>
-		<a class="btn" href="/nova-igra">nova igra</a>
-	</section>
+	<main class="plain"><div class="page">
+		<section class="card-panel intro">
+			<h2>Te igre ni več</h2>
+			<p class="lead">Miza je bila predolgo prazna in smo jo pospravili. Nova je en klik stran.</p>
+			<a class="btn" href="/nova-igra">Nova igra</a>
+		</section>
+	</div></main>
 
 } else if (_game is not LocalGame game) {
 
-	<p class="hint">Mizo pripravljamo…</p>
+	<main class="plain"><div class="page"><p class="hint">Pripravljamo mizo …</p></div></main>
 
-} else {
+} else if (game.IsOver) {
 
-	<div class="table-header">
-		<span class="chip">@Progress(game)</span>
-		<span class="chip">@game.Options.StyleName()</span>
-	</div>
-
-	@if (game.IsOver) {
-
+	<main class="plain"><div class="page">
 		<SessionSummary Stats="game.Stats()" YouSeat="game.Seat" OnPlayAgain="PlayAgain" />
 
 		@if (game.View is PlayerView last && last.Score is not null) {
@@ -56,23 +53,39 @@
 			</section>
 		}
 
-	} else if (game.View is PlayerView view) {
+		<section class="card-panel sheet plain">
+			<h2>Zapisnik</h2>
+			<ScoreSheetView Records="game.Records" Sheet="game.Sheet" NameOf="game.NameOf" YouSeat="game.Seat" />
+		</section>
+	</div></main>
 
-		<Board View="view"
-			   NameOf="game.NameOf"
-			   Busy="game.BotsAreThinking"
-			   Radlc="game.Hand?.RadlcMultiplier > 1"
-			   ShowOwnHand="!IsChoosingDiscards(view)"
-			   OnPlay="PlayAsync" />
+} else if (game.View is PlayerView view) {
 
-		<ActionPanel Actions="game" View="view" />
-	}
+	<Board View="view"
+		   NameOf="game.NameOf"
+		   Busy="game.BotsAreThinking"
+		   Radlc="game.Hand?.RadlcMultiplier > 1"
+		   Pick="_pick"
+		   OnPlay="PlayAsync">
+		<Chips>
+			<span class="chip">@Progress(game)</span>
+		</Chips>
+		<Actions>
+			<ActionPanel Actions="game" View="view" Pick="_pick" />
+		</Actions>
+		<Sheet>
+			<ScoreSheetView Records="game.Records" Sheet="game.Sheet" NameOf="game.NameOf" YouSeat="game.Seat" />
+		</Sheet>
+	</Board>
 
-	<ScoreSheetView Records="game.Records" Sheet="game.Sheet" NameOf="game.NameOf" YouSeat="game.Seat" />
+} else {
+
+	<main class="plain"><div class="page"><p class="hint">Delimo …</p></div></main>
 }
 
 @code {
 
+	private readonly DiscardPick _pick = new();
 	private LocalGame? _game;
 	private bool _missing;
 	private bool _needsKick;
@@ -156,14 +169,10 @@
 	}
 
 	private static string Progress(LocalGame game) => game.Options.Mode switch {
-		SessionMode.Hands => $"partija {Math.Max(game.HandNumber, 1)} / {game.Options.HandCount}",
+		SessionMode.Hands => $"Partija {Math.Max(game.HandNumber, 1)} / {game.Options.HandCount}",
 		SessionMode.Target => $"{game.Sheet.Totals.Max()} / {game.Options.TargetScore} točk",
-		_ => $"partija {Math.Max(game.HandNumber, 1)}"
+		_ => $"Partija {Math.Max(game.HandNumber, 1)}"
 	};
-
-	/// <summary>While the lay-away is on, the action panel owns the hand and the board hides it.</summary>
-	private static bool IsChoosingDiscards(PlayerView view) =>
-		view.Phase == GamePhase.Talon && !view.AwaitsUpgradeDecision && view.LegalDiscards.Count > 0;
 
 	private Task PlayAsync(Card card) => _game?.PlayCardAsync(card) ?? Task.CompletedTask;
 }

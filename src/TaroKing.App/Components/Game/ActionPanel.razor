@@ -6,164 +6,125 @@
 @using TaroKing.Engine.Session
 
 @*
-	Everything the human may do right now, and nothing else. Every button here maps to one engine
-	call; the engine refuses anything that does not belong, which is why the panel can afford to be
-	generous about what it offers.
+	The strip between the felt and your hand: what is going on and everything you may do about it
+	right now, nothing else. Every button maps to one engine call; the engine refuses anything that
+	does not belong, which is why the strip can afford to be generous about what it offers.
 *@
 
-<section class="action-panel @(View.IsYourTurn ? "action-live" : "action-waiting")">
+<div class="act @(View.IsYourTurn ? "act-live" : null)">
 
 	@if (Actions.Notice is string notice) {
 		<p class="notice">@notice</p>
 	}
 
 	@if (View.Phase == GamePhase.Bidding) {
-		<h2>Licitacija</h2>
-
 		@if (View.IsYourTurn) {
-			<div class="button-row">
-				@foreach (Contract contract in View.LegalBids) {
-					ContractInfo info = Contracts.Info(contract);
-					Contract chosen = contract;
-					<button class="btn" @onclick="() => Actions.BidAsync(chosen)">
-						@info.SlovenianName <span class="btn-note">@info.GameValue</span>
-					</button>
-				}
-
-				@if (View.CanPassBid) {
-					<button class="btn btn-quiet" @onclick="Actions.PassBidAsync">naprej</button>
-				}
-			</div>
-
-			@if (!View.CanPassBid) {
-				<p class="hint">Vsi so rekli naprej — predrok mora nekaj igrati.</p>
+			<span class="dot"></span><b>Licitiraš</b>
+			@foreach (Contract contract in View.LegalBids) {
+				ContractInfo info = Contracts.Info(contract);
+				Contract chosen = contract;
+				<button class="btn" @onclick="() => Actions.BidAsync(chosen)">
+					@Capital(info.SlovenianName) <span class="btn-note">@info.GameValue</span>
+				</button>
+			}
+			@if (View.CanPassBid) {
+				<button class="btn btn-quiet" @onclick="Actions.PassBidAsync">Naprej</button>
+			} else {
+				<p class="hint">Vsi so rekli naprej — kot predigralec moraš nekaj igrati.</p>
 			}
 		} else {
-			<p class="hint">Čakamo @Actions.SeatName(View.CurrentSeat ?? 0).</p>
+			<b>Licitacija</b><p class="hint">Na vrsti je @Actions.SeatName(View.CurrentSeat ?? 0).</p>
 		}
 
 	} else if (View.Phase == GamePhase.KingCall) {
-		<h2>Klicanje kralja</h2>
-
 		@if (View.IsYourTurn) {
-			<div class="button-row">
-				@foreach (Suit suit in View.LegalKingCalls) {
-					Suit chosen = suit;
-					<button class="btn suit-btn @SuitClass(suit)" @onclick="() => Actions.CallKingAsync(chosen)">
-						@suit.Symbol() @suit.SlovenianName()
-					</button>
-				}
-			</div>
-			<p class="hint">Kralj, ki ga pokličeš, ti postane soigralec — dokler ne pade, ne ve nihče, kdo je.</p>
+			<span class="dot"></span><b>Pokliči kralja</b>
+			@foreach (Suit suit in View.LegalKingCalls) {
+				Suit chosen = suit;
+				<button class="btn suit-btn @SuitClass(suit)" @onclick="() => Actions.CallKingAsync(chosen)">
+					@suit.Symbol() @Capital(suit.SlovenianName())
+				</button>
+			}
+			<p class="hint">Kdor ima klicanega kralja, je tvoj soigralec — do padca kralja tega ne ve nihče.</p>
 		} else {
-			<p class="hint">@Actions.SeatName(View.Declarer ?? 0) kliče kralja.</p>
+			<b>Klicanje kralja</b><p class="hint">@Actions.SeatName(View.Declarer ?? 0) kliče kralja.</p>
 		}
 
 	} else if (View.AwaitsUpgradeDecision) {
-		<h2>Barvni valat?</h2>
-		<p class="hint">Po menjavi lahko solo dvigneš v barvni valat — vse štihe, taroki kot navadna barva.</p>
-		<div class="button-row">
-			<button class="btn" @onclick="() => Actions.UpgradeAsync(true)">barvni valat</button>
-			<button class="btn btn-quiet" @onclick="() => Actions.UpgradeAsync(false)">ostanem pri @ContractName</button>
-		</div>
+		<span class="dot"></span><b>Barvni valat?</b>
+		<button class="btn" @onclick="() => Actions.UpgradeAsync(true)">Barvni valat</button>
+		<button class="btn btn-quiet" @onclick="() => Actions.UpgradeAsync(false)">Ostanem pri @ContractName</button>
+		<p class="hint">Po talonu lahko solo dvigneš v barvni valat — vsi štihi, taroki štejejo kot navadna barva.</p>
 
 	} else if (View.Phase == GamePhase.Talon && View.LegalDiscards.Count > 0) {
-		<h2>Zalaganje</h2>
-		<p class="hint">
-			Izbranih @_discards.Count od @View.DiscardCount. Založene karte gredo v tvoj kup,
-			zato z njimi skrivaš točke — kraljev, škisa, monda in pagata ni dovoljeno založiti.
-		</p>
-
-		<div class="hand-row">
-			@foreach (Card card in View.Hand) {
-				<CardView Card="card"
-						  Legal="View.LegalDiscards.Contains(card)"
-						  Selected="_discards.Contains(card)"
-						  OnSelect="ToggleDiscard" />
-			}
-		</div>
-
-		<div class="button-row">
-			<button class="btn" disabled="@(_discards.Count != View.DiscardCount)" @onclick="SubmitDiscards">založi</button>
-			<button class="btn btn-quiet" disabled="@(_discards.Count == 0)" @onclick="ClearDiscards">počisti izbor</button>
-		</div>
+		<span class="dot"></span><b>Založi @View.DiscardCount</b>
+		<span class="hint">izbrano @Pick.Count od @View.DiscardCount — založene karte štejejo tebi, kraljev, škisa, monda in pagata ni dovoljeno založiti</span>
+		<button class="btn" disabled="@(Pick.Count != View.DiscardCount)" @onclick="SubmitDiscards">Založi</button>
+		<button class="btn btn-quiet" disabled="@(Pick.Count == 0)" @onclick="Pick.Clear">Počisti</button>
 
 	} else if (View.Phase == GamePhase.Talon) {
-		<h2>Talon</h2>
-
 		@if (View.IsYourTurn && View.TakenTalonPacket.Count == 0) {
-			<div class="button-row">
-				@for (int packet = 0; packet < View.TalonPacketCount; packet++) {
-					int chosen = packet;
-					<button class="btn" @onclick="() => Actions.TakeTalonPacketAsync(chosen)">sveženj @(chosen + 1)</button>
-				}
-			</div>
-			<p class="hint">Svežnji ležijo na hrbtu; izbrani se obrne za vso mizo.</p>
+			<span class="dot"></span><b>Vzemi s talona</b>
+			@for (int packet = 0; packet < View.TalonPacketCount; packet++) {
+				int chosen = packet;
+				<button class="btn" @onclick="() => Actions.TakeTalonPacketAsync(chosen)">@(chosen + 1). sveženj</button>
+			}
+			<p class="hint">Svežnji ležijo na hrbtu; tistega, ki ga vzameš, vidi vsa miza.</p>
 		} else {
-			<p class="hint">@Actions.SeatName(View.Declarer ?? 0) menja s talonom.</p>
+			<b>Talon</b><p class="hint">@Actions.SeatName(View.Declarer ?? 0) menja s talonom.</p>
 		}
 
 	} else if (View.Phase == GamePhase.Announcing) {
-		<h2>Napovedi</h2>
-
 		@if (View.IsYourTurn) {
-			<div class="button-row">
-				@foreach (Bonus bonus in View.LegalAnnouncements) {
-					BonusInfo info = Bonuses.Info(bonus);
-					Bonus chosen = bonus;
-					<button class="btn" @onclick="() => Actions.AnnounceAsync(chosen)">
-						@info.SlovenianName <span class="btn-note">@info.AnnouncedValue</span>
-					</button>
-				}
-
-				@foreach (KontraTarget target in View.LegalKontras) {
-					KontraTarget chosen = target;
-					<button class="btn btn-danger" @onclick="() => Actions.KontraAsync(chosen)">@KontraLabel(target)</button>
-				}
-
-				<button class="btn btn-quiet" @onclick="Actions.PassAnnouncementAsync">naprej</button>
-			</div>
+			<span class="dot"></span><b>Napovej</b>
+			@foreach (Bonus bonus in View.LegalAnnouncements) {
+				BonusInfo info = Bonuses.Info(bonus);
+				Bonus chosen = bonus;
+				<button class="btn" @onclick="() => Actions.AnnounceAsync(chosen)">
+					@Capital(info.SlovenianName) <span class="btn-note">@info.AnnouncedValue</span>
+				</button>
+			}
+			@foreach (KontraTarget target in View.LegalKontras) {
+				KontraTarget chosen = target;
+				<button class="btn btn-danger" @onclick="() => Actions.KontraAsync(chosen)">@KontraLabel(target)</button>
+			}
+			<button class="btn btn-quiet" @onclick="Actions.PassAnnouncementAsync">Naprej</button>
 		} else {
-			<p class="hint">Napoveduje @Actions.SeatName(View.CurrentSeat ?? 0).</p>
+			<b>Napovedi</b><p class="hint">Napoveduje @Actions.SeatName(View.CurrentSeat ?? 0).</p>
 		}
 
 	} else if (View.Phase == GamePhase.Play) {
-		<h2>Igra</h2>
-		<p class="hint">
-			@(View.IsYourTurn
-				? "Na potezi si — osvetljene karte so dovoljene."
-				: $"Na potezi je {Actions.SeatName(View.CurrentSeat ?? 0)}.")
-		</p>
+		@if (View.IsYourTurn) {
+			<span class="dot"></span><b>Na potezi si</b><span class="hint">@PlayHint</span>
+		} else {
+			<b>Na potezi je @Actions.SeatName(View.CurrentSeat ?? 0)</b>
+		}
 
 	} else if (View.Phase == GamePhase.Finished) {
-		<h2>Konec partije</h2>
+		<b>Konec partije</b>
 
-		@if (View.Score is not null) {
+		@if (View.Score is HandScore score) {
+			<span class="hint">
+				@(score.DeclarerWon ? "Igra je dobljena." : "Igra je izgubljena.")
+				@if (!View.IsSpectator) {
+					<text> Tvoj izkupiček: <strong>@Signed(score[View.Seat])</strong>.</text>
+				}
+			</span>
 			<ul class="score-lines">
-				@foreach (ScoreLine line in View.Score.Lines) {
+				@foreach (ScoreLine line in score.Lines) {
 					<li>@line.ToString()</li>
 				}
 			</ul>
-			<p class="hint">
-				@(View.Score.DeclarerWon ? "Igra je bila dobljena." : "Igra je bila izgubljena.")
-				@if (!View.IsSpectator) {
-					<span>Tvoj izkupiček: <strong>@View.Score[View.Seat]</strong></span>
-				}
-			</p>
 		}
 
 		@if (Actions.CanDealNext) {
-			<div class="button-row">
-				<button class="btn" @onclick="Actions.DealNextAsync">naslednja partija</button>
-			</div>
+			<button class="btn" @onclick="Actions.DealNextAsync">Naslednja partija</button>
 		}
 	}
 
-</section>
+</div>
 
 @code {
-
-	private readonly List<Card> _discards = [];
 
 	[Parameter, EditorRequired]
 	public ITableActions Actions { get; set; } = default!;
@@ -171,36 +132,55 @@
 	[Parameter, EditorRequired]
 	public PlayerView View { get; set; } = default!;
 
+	/// <summary>Shared with the board, which is where the cards get picked.</summary>
+	[Parameter, EditorRequired]
+	public DiscardPick Pick { get; set; } = default!;
+
 	private string ContractName =>
 		View.Contract is Contract contract ? Contracts.Info(contract).SlovenianName : "igri";
 
 	private static string SuitClass(Suit suit) => $"suit-{suit.ToString().ToLowerInvariant()}";
 
-	private void ToggleDiscard(Card card) {
-		if (!_discards.Remove(card) && _discards.Count < View.DiscardCount) {
-			_discards.Add(card);
-		}
-	}
+	private static string Capital(string text) =>
+		text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
-	private void ClearDiscards() => _discards.Clear();
+	private static string Signed(int value) =>
+		value.ToString("+#;-#;0", System.Globalization.CultureInfo.InvariantCulture);
 
 	private async Task SubmitDiscards() {
-		Card[] chosen = [.. _discards];
-		_discards.Clear();
+		Card[] chosen = Pick.Take();
 
 		await Actions.DiscardAsync(chosen);
 	}
 
+	/// <summary>What the rules leave you: follow suit, trump, or play anything.</summary>
+	private string PlayHint {
+		get {
+			if (View.CurrentTrick.Count == 0) {
+				return "ti vodiš — igraj katerokoli karto";
+			}
+
+			Card led = View.CurrentTrick[0].Card;
+			bool followsSuit = View.LegalPlays.Any(card => card.Suit == led.Suit);
+
+			if (followsSuit) {
+				return led.IsTrump ? "vodi tarok — priznati ga moraš" : $"vodi {led.Suit.SlovenianName()} — priznati moraš barvo";
+			}
+
+			return View.LegalPlays.All(card => card.IsTrump) ? "barve nimaš — vzeti moraš s tarokom" : "nimaš ne barve ne taroka — odvrzi karkoli";
+		}
+	}
+
 	private string KontraLabel(KontraTarget target) {
 		if (!target.IsGame) {
-			return $"kontra {Bonuses.Info(target.Kind!.Value).SlovenianName}";
+			return $"Kontra {Bonuses.Info(target.Kind!.Value).SlovenianName}";
 		}
 
 		return View.GameKontraMultiplier switch {
-			1 => "kontra",
-			2 => "rekontra",
-			4 => "subkontra",
-			_ => "mordkontra"
+			1 => "Kontra",
+			2 => "Rekontra",
+			4 => "Subkontra",
+			_ => "Mordkontra"
 		};
 	}
 }

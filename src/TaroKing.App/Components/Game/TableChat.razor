@@ -1,28 +1,27 @@
 @using TaroKing.App.Services
 
 @*
-	Table talk. The table itself speaks here too — who sat down, whose clock ran out, how a hand
-	ended — so the log doubles as the table's own record of what happened.
+	Table talk — the lines and the box to type in; the board wraps it in its panel. The table
+	itself speaks here too (who sat down, whose clock ran out, how a hand ended), so the log doubles
+	as the table's own record of what happened.
 *@
 
-<section class="card-panel chat">
-	<h2>Za mizo</h2>
+<ol>
+	@foreach (ChatLine line in Lines) {
+		<li class="@(line.FromTable ? "from-table" : null)">
+			@if (!line.FromTable) {
+				<b>@line.Who</b>
+			}
+			<span>@line.Text</span>
+		</li>
+	}
+</ol>
 
-	<ol class="chat-lines">
-		@foreach (ChatLine line in Lines) {
-			<li class="@(line.FromTable ? "from-table" : null)">
-				<span class="chat-who">@(line.FromTable ? "•" : line.Who)</span>
-				<span class="chat-text">@line.Text</span>
-			</li>
-		}
-	</ol>
-
-	<div class="button-row">
-		<input class="field" @bind="_text" @bind:event="oninput" maxlength="200"
-			   @onkeydown="OnKey" placeholder="povej kaj" />
-		<button class="btn btn-quiet" @onclick="Send" disabled="@(string.IsNullOrWhiteSpace(_text))">pošlji</button>
-	</div>
-</section>
+<form @onsubmit="Send" @onsubmit:preventDefault>
+	<label class="visually-hidden" for="chat-text">Sporočilo</label>
+	<input id="chat-text" class="field" @bind="_text" @bind:event="oninput" maxlength="200" placeholder="Napiši kaj …" autocomplete="off" />
+	<button type="submit" class="btn" disabled="@(string.IsNullOrWhiteSpace(_text))">Pošlji</button>
+</form>
 
 @code {
 
@@ -33,12 +32,6 @@
 
 	[Parameter]
 	public EventCallback<string> OnSay { get; set; }
-
-	private async Task OnKey(KeyboardEventArgs args) {
-		if (args.Key == "Enter") {
-			await Send();
-		}
-	}
 
 	private async Task Send() {
 		if (string.IsNullOrWhiteSpace(_text)) {

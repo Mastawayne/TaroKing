@@ -22,7 +22,7 @@
 	} else {
 		<div class="button-row">
 			<input class="field" @bind="_name" @bind:event="oninput" maxlength="20" placeholder="kako ti rečejo" />
-			<button class="btn btn-quiet" @onclick="Rename" disabled="@(string.IsNullOrWhiteSpace(_name))">preimenuj</button>
+			<button class="btn btn-quiet" @onclick="Rename" disabled="@(string.IsNullOrWhiteSpace(_name))">Preimenuj</button>
 		</div>
 		<p class="hint">
 			Za mizo te bodo videli kot <strong>@Me.Identity.Name</strong>. Kot gost nisi ocenjen in
@@ -67,7 +67,7 @@
 	</div>
 
 	<div class="button-row">
-		<button class="btn" @onclick="Open">odpri mizo</button>
+		<button class="btn" @onclick="Open">Odpri mizo</button>
 	</div>
 
 	<p class="hint">
@@ -112,7 +112,7 @@
 								<span> · samo člani</span>
 							}
 						</td>
-						<td><a class="btn btn-quiet" href="/miza/online/@table.Id">k mizi</a></td>
+						<td><a class="btn btn-quiet" href="/miza/online/@table.Id">K mizi</a></td>
 					</tr>
 				}
 			</tbody>

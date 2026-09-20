@@ -295,13 +295,41 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 ---
 
-## Phase 14 — Polish and deploy
+## Phase 14 — Nova miza (UI redesign)
+
+**Goal**: the table looks like the "Nočna miza" mockup (`Claude outputs/taroking-mockups.html`, artifact *TaroKing Mockups*) on desktop and on a phone, in three colour schemes, and the Slovenian on screen reads like a Slovenian wrote it.
+
+Decisions taken on the mockup: info as a row of chips above the table; score sheet top right, chat bottom right just above the hand row; chat translucent ("glass") in the dark and blue schemes, boxed with a hover lift in the light one; landscape is the default phone layout with a fanned hand, portrait is the test layout with the hand in two rows of six; cards are cream with the rank in the corner and one big pip, trumps dark with a gold roman numeral and a small T.
+
+- [x] Design tokens: `html[data-theme]` = `dark` (default) / `light` / `blue`; every colour in `app.css` is a variable, a scheme is one block
+- [x] Scheme picker in the top bar (three dots); saved in `localStorage` (`tk-theme`) and applied before first paint by an inline script in `App.razor`, so no flash; `wwwroot/taroking.js` holds the two helpers (`getPref`/`setPref`/`setTheme`)
+- [x] Fonts: Sora (display) + IBM Plex Sans (body) from Google Fonts with system fallbacks
+- [x] Shell: `TopBar.razor` (logo, Domov / Proti botom / Spletne mize / Lestvica as `NavLink`s, scheme picker, account) shared by `MainLayout` (plain pages, `.page` column) and the new `TableLayout` (table pages fill the window, nothing scrolls on desktop)
+- [x] `Board.razor` rebuilt: `.miza` grid = centre + side column, the felt under everything; info strip with chips (phase, contract, declarer, called king, partner, announcements, kontra, radlc, spectator) and the Zapisnik / Klepet toggles; ring with north above west–trick–east; dashed slot where your card will land; talon shown in the middle; "N. štih je pobral X" between tricks; exposed hand for the open beggar; last trick as a small panel in the side column
+- [x] Panels: Zapisnik top right, Klepet pinned above the hand row; each closable with × and the toggles; open/closed state saved (`tk-panels`); when both are closed the players spread out (`.miza.free`)
+- [x] `CardView.razor`: new face (corner + pip / dark trump with gold numeral; the T corner carries the numeral in `data-r` for the landscape fan); sizes Hand / Trick / Small; illegal cards darkened and desaturated instead of transparent; court cards K / D / C / P
+- [x] `ActionPanel.razor` is now the strip between felt and hand (`.act`): what is happening plus every legal button; play hint says why ("vodi srce — priznati moraš barvo", "barve nimaš — vzeti moraš s tarokom"); score lines and "Naslednja partija" at the end of a hand
+- [x] Lay-away picks cards in the hand itself: `DiscardPick` (Services) shared by the board and the strip, "Založi N · izbrano k od N", Založi / Počisti
+- [x] `ScoreSheetView` = the table only ("Ti" for your own column, the "z radlci" row only once somebody has one); `TableChat` = lines + form; both wrapped by whoever shows them
+- [x] `Table.razor` (bots) and `OnlineTablePage.razor` compose the board through `Chips` / `SeatNote` / `Actions` / `Sheet` / `Chat` fragments; the online waiting room (chairs, Sedi / Vstani / Vrni se k mizi, member flags, prijavi) lives on the felt until the first deal, the end of a table shows the summary there
+- [x] Phone landscape (`max-width: 1000px and landscape`, or `max-height: 520px`): 40 px bar, chips scroll in one row, north seat on its own row, 56 × 82 fan with −30 px overlap and the numeral in the corner, narrow scrolling side column
+- [x] Phone portrait (`max-width: 720px and portrait`): everything stacked and scrolling, seats share the width with the trick, hand as a 2 × 6 grid with legal cards outlined, panels below the hand
+- [x] Logo — crown badge "TK" (option B): `BrandLogo.razor` inline in the header (colours from `--logo-badge` / `--logo-letters`, per scheme), Sora 800 wordmark, `wwwroot/favicon.svg`, static `wwwroot/logo-dark.svg`, `logo-blue.svg`, `logo-light.svg`
+- [x] Copy: contracts are *dve* / *solo dve* (engine `ContractInfo`), "seja" not "sezija", "zapisnik" not "štrafta", buttons capitalised (Naprej, Založi, Pošlji, Razdeli, Odpri mizo …), chips read "Igra: Ana", "Klican: srce ♥", "Kontra ×2"
+- [ ] Sounds and a dealing / trick-collecting animation — moved to Phase 15
+- [ ] Settings (bot speed lives on `/nova-igra`; a "confirm move" switch and a per-account scheme are Phase 15)
+
+**Acceptance**: desktop 1280 × 820 matches the mockup in all three schemes; a hand against bots and an online hand are playable from bidding to the score with the strip alone; on a phone in landscape the whole table fits without scrolling, in portrait every card of the hand is visible; the scheme survives a reload; no English or half-Slovenian string is left on the table pages.
+
+**Note**: only the App project and one string table in the engine changed. Nothing in the rules, the bots, the tables or the store moved.
+
+---
+
+## Phase 15 — Polish and deploy
 
 - [ ] Sounds, dealing and trick-collecting animations
-- [x] Logo — crown badge "TK" (option B): `BrandLogo.razor` inline in the header (colours from `--logo-badge` / `--logo-letters`, falling back to `--accent` / `--felt-dark`, so a theme only sets two variables), Sora 800 wordmark, `wwwroot/favicon.svg` (switches to the light colours with `prefers-color-scheme`), static `wwwroot/logo-dark.svg`, `logo-blue.svg`, `logo-light.svg`
-- [ ] Themes (classic green / dark) + settings (speed, confirm move)
+- [ ] Settings: confirm move, scheme stored on the account for members
 - [ ] i18n: Slovenian by default, English second
-- [ ] Mobile layout (portrait)
 - [ ] Health check, logging (Serilog), rate limiting
 - [ ] Docker + docker-compose, deployment notes
 
@@ -311,15 +339,15 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 ## After v1
 
-v1 = phases 0-14. Everything below is ordered by what unblocks what: first the things a live site
-needs to stay up and stay clean (15-16), then the rules work (17-18), then the features people
-ask for (19-23). Same commit rule: one phase = one commit (`Phase N - Name`).
+v1 = phases 0-15. Everything below is ordered by what unblocks what: first the things a live site
+needs to stay up and stay clean (16-17), then the rules work (18-19), then the features people
+ask for (20-24). Same commit rule: one phase = one commit (`Phase N - Name`).
 
-Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v2.0** = 20-22 · **v2.1** = 23.
+Version tags: **v1.1** = 16-17 · **v1.2** = 18-19 · **v1.3** = 20 · **v2.0** = 21-23 · **v2.1** = 24.
 
 ---
 
-## Phase 15 — Live tables survive a restart, and ops basics (v1.1)
+## Phase 16 — Live tables survive a restart, and ops basics (v1.1)
 
 **Goal**: deploying a new version does not kill the hands being played, and you can see what the server is doing.
 
@@ -337,7 +365,7 @@ Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v2.0** 
 
 ---
 
-## Phase 16 — Account lifecycle and moderation (v1.1)
+## Phase 17 — Account lifecycle and moderation (v1.1)
 
 **Goal**: people can recover an account, leave, and be dealt with when they misbehave.
 
@@ -357,7 +385,7 @@ Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v2.0** 
 
 ---
 
-## Phase 17 — Rule sets and house rules (v1.2)
+## Phase 18 — Rule sets and house rules (v1.2)
 
 **Goal**: a table can choose its rules, and every stored hand knows which rules it was played under. Builds on the `RulesVersion` introduced by the code-review fixes.
 
@@ -374,13 +402,13 @@ Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v2.0** 
   - [ ] calling a queen when you hold all four kings
 - [ ] Lobby: "pravila" section when opening a table, summarised on the table card; non-default rules mark the table **unrated**
 - [ ] History shows the rule set of each match; replay against bots uses the same rule set
-- [ ] `RuleSet` presets: `ValatSi`, `Domača miza` (editable), `Turnir` (used by Phase 22)
+- [ ] `RuleSet` presets: `ValatSi`, `Domača miza` (editable), `Turnir` (used by Phase 23)
 
 **Acceptance**: every option has a hand-calculated test for both states; a match played with a custom rule set replays to identical scores; a rated table cannot be opened with anything but `ValatSi`.
 
 ---
 
-## Phase 18 — Three-player tarok (v1.2)
+## Phase 19 — Three-player tarok (v1.2)
 
 **Goal**: the lobby's 3/4 switch works. 16 cards each, no king calling, mond penalty −21.
 
@@ -399,7 +427,7 @@ Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v2.0** 
 
 ---
 
-## Phase 19 — Friends, private rooms, invites (v1.3)
+## Phase 20 — Friends, private rooms, invites (v1.3)
 
 **Goal**: playing with the people you know takes one link.
 
@@ -417,7 +445,7 @@ Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v2.0** 
 
 ---
 
-## Phase 20 — Stronger bot (v2.0)
+## Phase 21 — Stronger bot (v2.0)
 
 **Goal**: a bot an experienced player respects, with selectable strength.
 
@@ -437,12 +465,12 @@ Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v2.0** 
 
 ---
 
-## Phase 21 — Post-game analysis (v2.0)
+## Phase 22 — Post-game analysis (v2.0)
 
 **Goal**: after a match you can see where the points went.
 
 - [ ] Replay viewer `/partija/{id}/analiza/{hand}` — step through the event log forwards and backwards, all four hands face up (finished hands only), talon and lay-away shown
-- [ ] Per-decision evaluation: at each of your decisions the Phase 20 engine scores every legal option over sampled worlds *from your point of view at that moment*; the move you made is compared with the best
+- [ ] Per-decision evaluation: at each of your decisions the Phase 21 engine scores every legal option over sampled worlds *from your point of view at that moment*; the move you made is compared with the best
 - [ ] Double-dummy solver for the last 4-5 tricks (exact, all cards known) to mark real endgame errors separately from unlucky guesses
 - [ ] "Kje si izgubil točke": top 3 decisions of the hand by expected points lost, in plain Slovenian ("v 7. štihu bi s kraljem pobral 9 točk več")
 - [ ] Bidding review: expected score of what you bid vs. the alternatives, given only your 12 cards
@@ -454,13 +482,13 @@ Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v2.0** 
 
 ---
 
-## Phase 22 — Tournaments and league seasons (v2.0)
+## Phase 23 — Tournaments and league seasons (v2.0)
 
 **Goal**: organised competition on top of the rating.
 
 - [ ] Seasons: quarterly, soft rating reset towards 1000 at the start, season leaderboard + all-time leaderboard, archive of past seasons
 - [ ] Divisions by rating at season start; promotion/relegation at season end; badge on the profile
-- [ ] Tournament entity: name, start time, format, rule set (`Turnir` from Phase 17), rounds, hands per round, entry limits
+- [ ] Tournament entity: name, start time, format, rule set (`Turnir` from Phase 18), rounds, hands per round, entry limits
 - [ ] Format 1 — **duplicate rounds**: every table in a round plays the *same deals* (same seeds, same seat for the same role), so luck of the deal cancels out; ranking by total score
 - [ ] Format 2 — knockout of tables: top 2 of each table advance
 - [ ] Registration, check-in window, automatic seating (avoid seating friends together in duplicate rounds), late no-show → bot + forfeit flag
@@ -473,7 +501,7 @@ Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v2.0** 
 
 ---
 
-## Phase 23 — Installable app and notifications (v2.1)
+## Phase 24 — Installable app and notifications (v2.1)
 
 **Goal**: TaroKing behaves like an app on a phone.
 

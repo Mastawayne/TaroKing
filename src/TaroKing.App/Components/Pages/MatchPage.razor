@@ -98,7 +98,7 @@
 							@if (MySeat(match) is int mine) {
 								int seed = hand.Seed;
 								bool klop = hand.CompulsoryKlop;
-								<button class="btn btn-quiet" @onclick="() => Replay(seed, klop, mine)">odigraj znova</button>
+								<button class="btn btn-quiet" @onclick="() => Replay(seed, klop, mine)">Odigraj znova</button>
 							}
 						</td>
 					</tr>
@@ -108,7 +108,7 @@
 	</section>
 
 	@if (match.Chat.Count > 0) {
-		<section class="card-panel chat">
+		<section class="card-panel chat-log">
 			<h2>Za mizo</h2>
 			<ol class="chat-lines">
 				@foreach (ChatMessage line in match.Chat) {
@@ -122,7 +122,7 @@
 	}
 
 	<div class="button-row">
-		<a class="btn btn-quiet" href="/zgodovina">nazaj v zgodovino</a>
+		<a class="btn btn-quiet" href="/zgodovina">Nazaj v zgodovino</a>
 	</div>
 }
 

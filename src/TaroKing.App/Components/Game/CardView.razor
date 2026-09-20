@@ -1,14 +1,18 @@
 @using TaroKing.Engine.Cards
 
 @*
-	One card. It is a button whenever it can be clicked and a plain div otherwise, so the keyboard
-	reaches exactly the cards that are in play. "Dimmed" is a hint, never a rule: the server decides.
+	One card. A button whenever it can be clicked and a plain div otherwise, so the keyboard reaches
+	exactly the cards that are in play. "Dimmed" is a hint, never a rule: the server decides.
+
+	Plain suits: cream card, the rank in the corner, one big pip. Trumps: dark card, the numeral in
+	gold, a small T in the corner (which carries the numeral too, for layouts that hide the big one).
 *@
 
 @if (Clickable) {
 	<button type="button"
 			class="@CssClass"
 			title="@Title"
+			aria-label="@Title"
 			@onclick="Clicked">
 		@Face
 	</button>
@@ -19,6 +23,8 @@
 }
 
 @code {
+
+	public enum CardSize { Hand, Trick, Small }
 
 	[Parameter, EditorRequired]
 	public Card Card { get; set; }
@@ -31,9 +37,8 @@
 	[Parameter]
 	public bool Selected { get; set; }
 
-	/// <summary>Smaller, for piles and finished tricks.</summary>
 	[Parameter]
-	public bool Small { get; set; }
+	public CardSize Size { get; set; } = CardSize.Hand;
 
 	[Parameter]
 	public EventCallback<Card> OnSelect { get; set; }
@@ -46,7 +51,9 @@
 		get {
 			List<string> classes = ["card", $"suit-{Card.Suit.ToString().ToLowerInvariant()}"];
 
-			if (Small) {
+			if (Size == CardSize.Trick) {
+				classes.Add("card-trick");
+			} else if (Size == CardSize.Small) {
 				classes.Add("card-small");
 			}
 
@@ -70,18 +77,27 @@
 		? $"{Card.ShortName} — tarok, {Card.Points} t."
 		: $"{Card.ShortName} — {Card.Suit.SlovenianName()}, {Card.Points} t.";
 
-	/// <summary>Trumps wear their numeral big; plain suits wear their colour.</summary>
 	private RenderFragment Face => builder => {
 		builder.OpenElement(0, "span");
 		builder.AddAttribute(1, "class", "card-corner");
-		builder.AddContent(2, Card.IsTrump ? "T" : RankSymbol);
+		if (Card.IsTrump) {
+			builder.AddAttribute(2, "data-r", Card.ShortName);
+		}
+		builder.AddContent(3, Card.IsTrump ? "T" : RankSymbol);
 		builder.CloseElement();
 
-		builder.OpenElement(3, "span");
-		builder.AddAttribute(4, "class", Card.IsTrump ? "card-figure card-figure-trump" : "card-figure");
-		builder.AddContent(5, Card.IsTrump ? Card.ShortName : Card.Suit.Symbol());
+		builder.OpenElement(4, "span");
+		builder.AddAttribute(5, "class", Card.IsTrump ? "card-figure card-figure-trump" : "card-figure");
+		builder.AddContent(6, Card.IsTrump ? Card.ShortName : Card.Suit.Symbol());
 		builder.CloseElement();
 	};
 
-	private string RankSymbol => Card.ShortName[..^1];
+	/// <summary>Court cards in Slovenian: kralj, dama, kavalj, pob. Pips keep their number.</summary>
+	private string RankSymbol => (SuitRank)Card.Rank switch {
+		SuitRank.King => "K",
+		SuitRank.Queen => "D",
+		SuitRank.Knight => "C",
+		SuitRank.Jack => "P",
+		_ => Card.ShortName[..^1]
+	};
 }

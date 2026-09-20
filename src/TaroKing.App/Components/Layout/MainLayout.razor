@@ -1,39 +1,14 @@
 @inherits LayoutComponentBase
 
-@using Microsoft.AspNetCore.Components.Authorization
+@* Ordinary pages: the bar on top, the content in a readable column underneath. *@
 
-<div class="page">
-	<header class="topbar">
-		<a class="brand" href="/" aria-label="TaroKing">
-			<BrandLogo />
-			<span class="brand-word" aria-hidden="true">Taro<span class="brand-king">King</span></span>
-		</a>
-		<nav>
-			<a href="/">Domov</a>
-			<a href="/nova-igra">Proti botom</a>
-			<a href="/lobi">Lobi</a>
-			<a href="/lestvica">Lestvica</a>
-		</nav>
-		<div class="account">
-			<AuthorizeView>
-				<Authorized>
-					<a href="/zgodovina">@context.User.Identity?.Name</a>
-					<form method="post" action="/account/logout" class="inline-form">
-						<AntiforgeryToken />
-						<input type="hidden" name="ReturnUrl" value="/" />
-						<button type="submit" class="link-button">odjava</button>
-					</form>
-				</Authorized>
-				<NotAuthorized>
-					<a href="/prijava">prijava</a>
-					<a href="/registracija">registracija</a>
-				</NotAuthorized>
-			</AuthorizeView>
+<div class="app">
+	<TopBar />
+
+	<main class="plain">
+		<div class="page">
+			@Body
 		</div>
-	</header>
-
-	<main>
-		@Body
 	</main>
 </div>
 
