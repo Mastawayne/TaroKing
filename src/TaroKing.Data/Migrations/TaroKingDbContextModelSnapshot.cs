@@ -153,6 +153,12 @@ namespace TaroKing.Data.Migrations
                     b.Property<long>("At")
                         .HasColumnType("INTEGER");
 
+                    b.Property<long?>("HandledAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("HandledById")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -166,14 +172,44 @@ namespace TaroKing.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ReportedId");
+
+                    b.HasIndex("Status");
 
                     b.HasIndex("ReporterId", "ReportedId")
                         .IsUnique();
 
                     b.ToTable("Reports");
+                });
+
+            modelBuilder.Entity("TaroKing.Data.Block", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("At")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BlockedId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "BlockedId")
+                        .IsUnique();
+
+                    b.ToTable("Blocks");
                 });
 
             modelBuilder.Entity("TaroKing.Data.ChatMessage", b =>
@@ -303,6 +339,92 @@ namespace TaroKing.Data.Migrations
                     b.ToTable("Events");
                 });
 
+            modelBuilder.Entity("TaroKing.Data.LiveEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("HandNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Seat")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TableId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TableId", "HandNumber", "Ordinal")
+                        .IsUnique();
+
+                    b.ToTable("LiveEvents");
+                });
+
+            modelBuilder.Entity("TaroKing.Data.LiveTable", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Archived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ChatJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HostId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("OpenedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OptionsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Phase")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SeatsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("StartedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("UpdatedAt")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UpdatedAt");
+
+                    b.ToTable("LiveTables");
+                });
+
             modelBuilder.Entity("TaroKing.Data.Match", b =>
                 {
                     b.Property<int>("Id")
@@ -337,6 +459,9 @@ namespace TaroKing.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FinishedAt");
+
+                    b.HasIndex("Kind", "SourceId")
+                        .IsUnique();
 
                     b.ToTable("Matches");
                 });
@@ -392,6 +517,58 @@ namespace TaroKing.Data.Migrations
                     b.ToTable("MatchSeats");
                 });
 
+            modelBuilder.Entity("TaroKing.Data.ModerationAction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("At")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ModeratorId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ModeratorName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("ReportId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TargetName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TargetUserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("Until")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("At");
+
+                    b.HasIndex("TargetUserId");
+
+                    b.ToTable("ModerationActions");
+                });
+
             modelBuilder.Entity("TaroKing.Data.RatingChange", b =>
                 {
                     b.Property<int>("Id")
@@ -431,6 +608,13 @@ namespace TaroKing.Data.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("BanReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("BannedUntil")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
@@ -445,6 +629,9 @@ namespace TaroKing.Data.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("INTEGER");
 
@@ -455,6 +642,9 @@ namespace TaroKing.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("MatchesPlayed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("MutedUntil")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("NormalizedEmail")
@@ -488,6 +678,10 @@ namespace TaroKing.Data.Migrations
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Warning")
+                        .HasMaxLength(300)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -607,6 +801,17 @@ namespace TaroKing.Data.Migrations
                     b.Navigation("Hand");
                 });
 
+            modelBuilder.Entity("TaroKing.Data.LiveEvent", b =>
+                {
+                    b.HasOne("TaroKing.Data.LiveTable", "Table")
+                        .WithMany("Events")
+                        .HasForeignKey("TableId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Table");
+                });
+
             modelBuilder.Entity("TaroKing.Data.MatchSeat", b =>
                 {
                     b.HasOne("TaroKing.Data.Match", "Match")
@@ -645,6 +850,11 @@ namespace TaroKing.Data.Migrations
                 });
 
             modelBuilder.Entity("TaroKing.Data.Hand", b =>
+                {
+                    b.Navigation("Events");
+                });
+
+            modelBuilder.Entity("TaroKing.Data.LiveTable", b =>
                 {
                     b.Navigation("Events");
                 });

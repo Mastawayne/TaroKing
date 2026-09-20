@@ -2,7 +2,11 @@
 
 <PageTitle>TaroKing</PageTitle>
 
-<h1>TaroKing</h1>
+<div class="hero"><BrandLogo /><h1>TaroKing</h1></div>
+
+@if (Sporocilo == "izbrisano") {
+	<p class="notice notice-ok">Račun je izbrisan. Hvala za igro — kot gost si vedno dobrodošel nazaj.</p>
+}
 
 <p class="lead">
 	Slovenski tarok. Motor, boti in miza so zgrajeni po fazah iz <code>Tasks.md</code> —
@@ -46,3 +50,9 @@
 		<li>Nepobrisan radlc na koncu stane @TarokConstants.UncancelledRadlcPenalty točk</li>
 	</ul>
 </section>
+
+@code {
+
+	[SupplyParameterFromQuery(Name = "sporocilo")]
+	public string? Sporocilo { get; set; }
+}

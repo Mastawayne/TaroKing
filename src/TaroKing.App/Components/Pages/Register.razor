@@ -11,14 +11,14 @@
 		<section class="card-panel">
 			<p>Že si prijavljen kot <strong>@context.User.Identity?.Name</strong>.</p>
 			<div class="button-row">
-				<a class="btn" href="/lobi">v lobi</a>
+				<a class="btn" href="/lobi">V lobi</a>
 			</div>
 		</section>
 	</Authorized>
 	<NotAuthorized>
 		<section class="card-panel">
 			@if (Napaka is not null) {
-				<p class="notice">@(Napaka == "gesli" ? "Gesli se ne ujemata." : Napaka)</p>
+				<p class="notice">@(Napaka switch { "gesli" => "Gesli se ne ujemata.", "pogoji" => "Brez strinjanja s pogoji računa ne moremo odpreti.", _ => Napaka })</p>
 			}
 
 			<form method="post" action="/account/register" class="account-form">
@@ -28,21 +28,25 @@
 				<label class="field-label" for="reg-name">uporabniško ime</label>
 				<input class="field" id="reg-name" name="UserName" maxlength="20" minlength="3" autocomplete="username" required />
 
-				<label class="field-label" for="reg-password">geslo (vsaj 6 znakov)</label>
-				<input class="field" id="reg-password" name="Password" type="password" minlength="6" autocomplete="new-password" required />
+				<label class="field-label" for="reg-password">geslo (vsaj 8 znakov)</label>
+				<input class="field" id="reg-password" name="Password" type="password" minlength="8" autocomplete="new-password" required />
 
 				<label class="field-label" for="reg-confirm">še enkrat</label>
-				<input class="field" id="reg-confirm" name="Confirm" type="password" minlength="6" autocomplete="new-password" required />
+				<input class="field" id="reg-confirm" name="Confirm" type="password" minlength="8" autocomplete="new-password" required />
+
+				<label class="check">
+					<input type="checkbox" name="AcceptTerms" value="true" required /> strinjam se s <a href="/pogoji">pogoji uporabe</a> in <a href="/zasebnost">zasebnostjo</a>
+				</label>
 
 				<div class="button-row">
-					<button class="btn" type="submit">ustvari račun</button>
-					<a class="btn btn-quiet" href="/prijava">že imam račun</a>
+					<button class="btn" type="submit">Ustvari račun</button>
+					<a class="btn btn-quiet" href="/prijava">Že imam račun</a>
 				</div>
 			</form>
 
 			<p class="hint">
-				Račun je ime in geslo, nič drugega. Z njim se tvoje partije shranjujejo, rating se
-				premika, na lestvici si viden.
+				Račun je ime in geslo, nič drugega — e-poštni naslov lahko dodaš pozneje na profilu, če hočeš
+				možnost ponastavitve gesla. Z računom se tvoje partije shranjujejo, rating se premika, na lestvici si viden.
 			</p>
 		</section>
 	</NotAuthorized>

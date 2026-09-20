@@ -24,6 +24,9 @@
 			<input class="field" @bind="_name" @bind:event="oninput" maxlength="20" placeholder="kako ti rečejo" />
 			<button class="btn btn-quiet" @onclick="Rename" disabled="@(string.IsNullOrWhiteSpace(_name))">Preimenuj</button>
 		</div>
+		@if (_renameRefusal is string renameRefusal) {
+			<p class="notice">@renameRefusal</p>
+		}
 		<p class="hint">
 			Za mizo te bodo videli kot <strong>@Me.Identity.Name</strong>. Kot gost nisi ocenjen in
 			nič se ti ne zapomni — <a href="/prijava?returnUrl=/lobi">prijava</a> to spremeni.
@@ -65,6 +68,10 @@
 			<input type="checkbox" @bind="_fillWithBots" /> prazna mesta igrajo boti
 		</label>
 	</div>
+
+	@if (_refusal is string refusal) {
+		<p class="notice">@refusal</p>
+	}
 
 	<div class="button-row">
 		<button class="btn" @onclick="Open">Odpri mizo</button>
@@ -125,6 +132,8 @@
 	private IReadOnlyList<TableSummary> _lobby = [];
 	private string _name = "";
 	private string _tableName = "Miza";
+	private string? _refusal;
+	private string? _renameRefusal;
 
 	private int _rounds = 12;
 	private double _seconds = 3.0;
@@ -159,7 +168,7 @@
 	});
 
 	private async Task Rename() {
-		await Me.RenameAsync(_name);
+		_renameRefusal = await Me.RenameAsync(_name);
 		_name = Me.Identity.Name;
 	}
 
@@ -175,8 +184,10 @@
 			Visibility = _private ? TableVisibility.Private : TableVisibility.Public
 		};
 
-		OnlineTable table = Tables.Open(options, Me.Identity);
-		Navigation.NavigateTo($"/miza/online/{table.Id}");
+		OnlineTable? table = Tables.TryOpen(options, Me.Identity, Me.Blocked, out _refusal);
+		if (table is not null) {
+			Navigation.NavigateTo($"/miza/online/{table.Id}");
+		}
 	}
 
 	private static string PhaseName(TablePhase phase) => phase switch {

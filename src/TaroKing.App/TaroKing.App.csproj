@@ -23,4 +23,9 @@
 		</PackageReference>
 	</ItemGroup>
 
+	<!-- The word list travels with the app; keys and backups are written next to it at run time. -->
+	<ItemGroup>
+		<None Update="App_Data\badwords.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+	</ItemGroup>
+
 </Project>

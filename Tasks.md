@@ -316,8 +316,8 @@ Decisions taken on the mockup: info as a row of chips above the table; score she
 - [x] Phone portrait (`max-width: 720px and portrait`): everything stacked and scrolling, seats share the width with the trick, hand as a 2 × 6 grid with legal cards outlined, panels below the hand
 - [x] Logo — crown badge "TK" (option B): `BrandLogo.razor` inline in the header (colours from `--logo-badge` / `--logo-letters`, per scheme), Sora 800 wordmark, `wwwroot/favicon.svg`, static `wwwroot/logo-dark.svg`, `logo-blue.svg`, `logo-light.svg`
 - [x] Copy: contracts are *dve* / *solo dve* (engine `ContractInfo`), "seja" not "sezija", "zapisnik" not "štrafta", buttons capitalised (Naprej, Založi, Pošlji, Razdeli, Odpri mizo …), chips read "Igra: Ana", "Klican: srce ♥", "Kontra ×2"
-- [ ] Sounds and a dealing / trick-collecting animation — moved to Phase 15
-- [ ] Settings (bot speed lives on `/nova-igra`; a "confirm move" switch and a per-account scheme are Phase 15)
+- [ ] Sounds and a dealing / trick-collecting animation — moved to Phase 20
+- [ ] Settings (bot speed lives on `/nova-igra`; a "confirm move" switch and a per-account scheme are Phase 20)
 
 **Acceptance**: desktop 1280 × 820 matches the mockup in all three schemes; a hand against bots and an online hand are playable from bidding to the score with the strip alone; on a phone in landscape the whole table fits without scrolling, in portrait every card of the hand is visible; the scheme survives a reload; no English or half-Slovenian string is left on the table pages.
 
@@ -325,69 +325,67 @@ Decisions taken on the mockup: info as a row of chips above the table; score she
 
 ---
 
-## Phase 15 — Polish and deploy
-
-- [ ] Sounds, dealing and trick-collecting animations
-- [ ] Settings: confirm move, scheme stored on the account for members
-- [ ] i18n: Slovenian by default, English second
-- [ ] Health check, logging (Serilog), rate limiting
-- [ ] Docker + docker-compose, deployment notes
-
-**Acceptance**: Lighthouse ≥ 90 on the table page; the app runs in a container against an external SQLite file; the language switches without a restart.
-
----
-
 ## After v1
 
-v1 = phases 0-15. Everything below is ordered by what unblocks what: first the things a live site
-needs to stay up and stay clean (16-17), then the rules work (18-19), then the features people
-ask for (20-24). Same commit rule: one phase = one commit (`Phase N - Name`).
+v1 = phases 0-14. Everything below is ordered by what unblocks what: first the things a live site
+needs to stay up and stay clean (15-16), then the rules work (17-18), then the features people
+ask for (19), polish and deployment once the rules are settled (20), then the big ones (21-24). Same commit rule: one phase = one commit (`Phase N - Name`).
 
-Version tags: **v1.1** = 16-17 · **v1.2** = 18-19 · **v1.3** = 20 · **v2.0** = 21-23 · **v2.1** = 24.
-
----
-
-## Phase 16 — Live tables survive a restart, and ops basics (v1.1)
-
-**Goal**: deploying a new version does not kill the hands being played, and you can see what the server is doing.
-
-- [ ] `LiveTableStore` — every event of an online hand is appended to the database as it happens (`LiveTables`, `LiveHands`, `LiveEvents`), not only at the end of the match
-- [ ] On startup `TableService` rebuilds every unfinished table from its log (`HandState.Replay`), seats held, clocks reset to the full reserve
-- [ ] Graceful shutdown: on `ApplicationStopping` stop dealing new hands, flush, tell the tables "strežnik se posodablja — igra se nadaljuje čez minuto"
-- [ ] Reconnect UI copes with a server that went away for up to 2 minutes (Blazor reconnect modal in Slovenian, automatic retry)
-- [ ] Archive queue with retry (the in-memory one from the review becomes durable)
-- [ ] Nightly SQLite backup (`VACUUM INTO`) with 14-day retention; restore procedure written down in `README.md`
-- [ ] Metrics: open tables, humans online, tick duration p50/p99, archive failures — OpenTelemetry → Prometheus endpoint `/metrics` (protected)
-- [ ] Load test project `tools/TaroKing.LoadTest`: N bot-only tables + M simulated circuits; record the ceiling per core in `README.md`
-- [ ] Optional PostgreSQL provider behind a config switch (`Database:Provider`), migrations for both
-
-**Acceptance**: `docker compose restart app` in the middle of a trick — all four browsers reconnect and the hand continues from the same card; 200 bot tables hold tick p99 < 50 ms on the production box; a backup restores into an empty container and history is intact.
+Version tags: **v1.1** = 15-16 · **v1.2** = 17-18 · **v1.3** = 19 · **v1.4** = 20 · **v2.0** = 21-23 · **v2.1** = 24.
 
 ---
 
-## Phase 17 — Account lifecycle and moderation (v1.1)
+## Phase 15 — Live tables survive a restart, and ops basics (v1.1)
 
-**Goal**: people can recover an account, leave, and be dealt with when they misbehave.
+**Goal**: deploying a new version does not kill the hands being played, and you can see what the server is doing. Folds in the review's concurrency and robustness items (H4, L1, M7, M10, M11, M12) because a journal is only as good as the state it journals.
 
-- [ ] Optional e-mail on the account, confirmed by link; SMTP through configuration (no provider hard-coded)
-- [ ] Password reset by e-mail; change password and change e-mail on `/profil`
-- [ ] Delete my account (GDPR): user row anonymised, `MatchSeat.UserId` set null, name replaced with "izbrisan igralec", rating history removed
-- [ ] Export my data (JSON: profile, matches, rating history)
-- [ ] Roles: `Admin`, `Moderator` (Identity roles, seeded from configuration)
-- [ ] `/admin/prijave` — report queue from `BlacklistReport`: see the match, the chat, the reported player's history; actions: dismiss, warn, mute chat (timed), ban (timed / permanent)
-- [ ] Mute and ban are enforced server-side in `OnlineTable.Say` / `Sit` and at login
-- [ ] Personal block list: a player you blocked cannot sit at a table you host, and you do not see their chat
-- [ ] Chat word filter (Slovenian + English list in a file, not in code) and per-player chat rate limit
-- [ ] Audit log of every moderator action (who, what, when, why)
-- [ ] Privacy page + terms page (Slovenian), linked from registration
+- [x] `OnlineTable` is single-writer by construction: every mutator (`Sit`, `Stand`, `Rejoin`, `Attach`, `Detach`, `Say`, the heartbeat, every move) takes the one gate; readers get an immutable `TableSnapshot` (chairs, chat, records, one `PlayerView` per seat + spectator, clocks) published as one reference on the way out. Pages never touch a live list. (review H4)
+- [x] `TableSeat` is now the immutable chair in the snapshot; `ChatLine` carries the speaker's `UserId`
+- [x] Journal: `LiveTables` (options, chairs, chat, phase as JSON) + `LiveEvents` (one row per event per hand), written through `ITableJournal` → `LiveTableJournal` (a channel) → `LiveTableWriter` (background, in order, idempotent appends). The table never waits on the database.
+- [x] On startup `TableService.RestoreAsync` rebuilds every unarchived table from the journal: finished hands are replayed onto the sheet, the interrupted hand is replayed to its last event, chairs are put back with everybody marked away (a bot takes a seat after the usual 60 s), clocks start from the full reserve. A journal that cannot be replayed is dropped with a log line, not left to break the heartbeat.
+- [x] Graceful shutdown: `ApplicationStopping` → `TableService.BeginShutdown()` — every table says "Strežnik se posodablja — igra se nadaljuje čez minuto", no new deals, no new tables; `HostOptions.ShutdownTimeout` 20 s; `LiveTableWriter.StopAsync` flushes the journal
+- [x] Reconnect UI in Slovenian (`components-reconnect-modal` in `App.razor`): attempt counter, 40 retries × 3 s, then "Osveži"; `Blazor.start` with `autostart="false"`
+- [x] Archive queue with retry: `ArchiveQueue` (channel) + `ArchiveWorker` (2 s / 10 s / 60 s back-off); `MatchStore.SaveAsync` is idempotent on `(Kind, SourceId)` (unique index), so a retry can never double-write; a match that still fails is retried after the next restart because its journal is only deleted once the archive lands; `Archived` is set on enqueue, not before a write (review M7)
+- [x] Sick tables: three heartbeats in a row that throw put a `RandomBot` (always legal) on the stuck seat, ten close the table with a message and `Faulted = true`; `Say` is rate-limited to 5 lines per 10 s; a host may hold 2 unfinished tables and open 5 in 10 minutes; `Tables:Max` (200) caps the server (review M10)
+- [x] Migration `20260920084701_LiveTablesAndModeration` generated; EF migration files are marked generated in `.editorconfig` so IDE0161 stays quiet
+- [x] `EnsureCreated` fallback removed — migrations only (review M11); Data Protection keys persisted in `App_Data/keys`, `UseForwardedHeaders` for a reverse proxy (review M12)
+- [x] Nightly SQLite backup (`VACUUM INTO`, `App_Data/backups`, 14 days) in `SqliteBackupService`; restore procedure in `README.md`
+- [x] Metrics at `/metrics` (Prometheus text, `Metrics:Token`): open tables, tables playing, humans online, heartbeat p50/p99/max, archive ok/failed, hands dealt, tables opened. Own `ServerMetrics` + a 40-line renderer instead of an OpenTelemetry exporter — nothing to version, nothing to configure. `/zdravje` liveness probe.
+- [x] Load test `tools/TaroKing.LoadTest` (in the solution under `tools`): N tables with a human whose clock runs out + M readers, prints the heartbeat percentiles every 10 s
+- [x] Measured on the dev machine (Release): 200 tables / 400 readers → tick p50 0.85 ms, p99 12.4 ms, max 26.3 ms, written into `README.md`; the production box gets its own number when there is one
+- [ ] Optional PostgreSQL provider behind `Database:Provider` — deferred: it needs a second migrations assembly and a box to test on; do it when SQLite actually becomes the limit
 
-**Acceptance**: reset link works once and expires after 1 hour; a banned account cannot log in or sit and sees why; deleting an account leaves every match it played readable with the name anonymised; every moderator action appears in the audit log.
+**Acceptance**: stop the app in the middle of a trick and start it again — the table is back with the same hand, every browser reconnects and the hand continues from the same card; killing the database during an archive still ends with the match stored once; the concurrency stress test (8 tasks × 4 s) is green; 200 bot tables hold tick p99 < 50 ms on the production box; a backup restores into an empty folder and history is intact.
+
+**Note**: needs a migration — `dotnet ef migrations add LiveTablesAndModeration --project src\TaroKing.Data --startup-project src\TaroKing.App` (one migration covers Phase 15 and 16, generated once both are in the tree).
 
 ---
 
-## Phase 18 — Rule sets and house rules (v1.2)
+## Phase 16 — Account lifecycle and moderation (v1.1)
 
-**Goal**: a table can choose its rules, and every stored hand knows which rules it was played under. Builds on the `RulesVersion` introduced by the code-review fixes.
+**Goal**: people can recover an account, leave, and be dealt with when they misbehave. Folds in the review's account items (M6, M8, L10).
+
+- [x] Optional e-mail on the account, confirmed by link (`/account/email` → `/account/confirm`); `IMailSender` with `SmtpMailSender` from `Smtp:*` configuration, links go to the log when no host is set
+- [x] Password reset by e-mail (`/pozabljeno-geslo` → `/account/forgot` → `/ponastavi-geslo` → `/account/reset`, token valid one hour, same reply whether or not the account exists); change password and e-mail on `/profil`
+- [x] Delete my account (GDPR): `AccountStore.AnonymiseAsync` — user row kept but anonymised (`izbrisan-xxxxxxxx`, no e-mail, no password, locked out, `IsDeleted`), `MatchSeat.UserId` null and name "izbrisan igralec", rating history / blocks / own reports removed; password + the word IZBRIŠI to confirm
+- [x] Export my data (`/account/export`, JSON: profile, matches with seats and ratings, rating history, blocks)
+- [x] Roles `Admin`, `Moderator` (`AddRoles<IdentityRole>()`), seeded from `Admins` in configuration; policy `Moderation`; `Routes.razor` uses `AuthorizeRouteView` with a login redirect
+- [x] `/admin/prijave` — open/all reports with the reported player's rating, matches, walk-outs, open reports, mute/ban state, link to the archived match (and its chat); actions dismiss, warn, mute 1 h / 1 d / 7 d, ban 1 d / 7 d / 30 d / permanent, plus unmute / unban
+- [x] Enforcement: `OnlineTable.Sit` refuses banned and host-blocked players, `Say` refuses muted ones; `/account/login` refuses banned and deleted accounts; a ban rotates the security stamp and the cookie is re-validated every 5 minutes, so an open session is signed out; `PlayerSession.RefreshAsync` reloads mute/ban/blocks
+- [x] Personal block list (`Blocks`): "blokiraj" next to "prijavi" at the table, list and unblock on `/profil`; the host's blocks travel with the table (`hostBlocks`), a reader's blocks filter the chat (`ChatLine.UserId`)
+- [x] Chat word filter `App_Data/badwords.txt` (Slovenian + English, one per line, `#` comments, whole words, masked with `*`) + per-player rate limit (Phase 15)
+- [x] Audit log `ModerationActions` (who, what, whom, until, why, which report) on `/admin/dnevnik`; every moderator action writes a row
+- [x] `/zasebnost` and `/pogoji` (Slovenian), linked from registration with a required checkbox; warnings shown once on `/profil`
+- [x] Review M6: lockout after 5 failed logins for 5 minutes, passwords ≥ 8, `/account/*` rate-limited to 10 requests/minute per address; M8: guest ids accepted only as `guest-{32 hex}` (else regenerated), members are `user-{id}` — the two namespaces cannot collide; a guest cannot take a member's name; L10: `SafeReturn` also rejects `/\`
+- [ ] Rating farm cap (rate only public tables with ≥ 3 humans, cap the rating a pair may exchange per day) — Phase 17 with the rule set, where rated play is defined
+
+**Acceptance**: reset link works once and expires after 1 hour; a banned account cannot log in or sit and sees why, and an open session is out within 5 minutes; deleting an account leaves every match it played readable with the name anonymised; every moderator action appears in the audit log; the 6th wrong password is locked out; a forged guest id is replaced, not honoured.
+
+---
+
+## Phase 17 — Rule sets and house rules (v1.2)
+
+**Goal**: a table can choose its rules, and every stored hand knows which rules it was played under. This is where the rules items of `CodeReview.md` land, in its order: R1 rules version (M9), R2 seed width (H3), R3 hidden information (H1, H2, H5), R4 forehand rotation (H6), R5 scoring decisions (H7, M1–M5) — each checked against a real valat.si sheet first — then the house rules below on top of the `RuleSet` those introduce.
 
 - [ ] `RuleSet` record in the engine — immutable, serialisable, carried by `HandDealt`; `RuleSet.ValatSi` is the default and the only one used for rated play
 - [ ] Options, each with a test pair (on/off):
@@ -408,7 +406,7 @@ Version tags: **v1.1** = 16-17 · **v1.2** = 18-19 · **v1.3** = 20 · **v2.0** 
 
 ---
 
-## Phase 19 — Three-player tarok (v1.2)
+## Phase 18 — Three-player tarok (v1.2)
 
 **Goal**: the lobby's 3/4 switch works. 16 cards each, no king calling, mond penalty −21.
 
@@ -427,7 +425,7 @@ Version tags: **v1.1** = 16-17 · **v1.2** = 18-19 · **v1.3** = 20 · **v2.0** 
 
 ---
 
-## Phase 20 — Friends, private rooms, invites (v1.3)
+## Phase 19 — Friends, private rooms, invites (v1.3)
 
 **Goal**: playing with the people you know takes one link.
 
@@ -442,6 +440,18 @@ Version tags: **v1.1** = 16-17 · **v1.2** = 18-19 · **v1.3** = 20 · **v2.0** 
 - [ ] Friends-only tables: visible in the lobby to friends of the host only
 
 **Acceptance**: invite link → seated in ≤ 2 clicks for a logged-in friend and ≤ 3 for a guest; an expired or forged token is refused; a rematch table opens with all four seated in their old chairs; presence updates within 5 seconds.
+
+---
+
+## Phase 20 — Polish and deploy (v1.4)
+
+- [ ] Sounds, dealing and trick-collecting animations
+- [ ] Settings: confirm move, scheme stored on the account for members
+- [ ] i18n: Slovenian by default, English second
+- [ ] Health check, logging (Serilog), rate limiting
+- [ ] Docker + docker-compose, deployment notes
+
+**Acceptance**: Lighthouse ≥ 90 on the table page; the app runs in a container against an external SQLite file; the language switches without a restart.
 
 ---
 
@@ -488,7 +498,7 @@ Version tags: **v1.1** = 16-17 · **v1.2** = 18-19 · **v1.3** = 20 · **v2.0** 
 
 - [ ] Seasons: quarterly, soft rating reset towards 1000 at the start, season leaderboard + all-time leaderboard, archive of past seasons
 - [ ] Divisions by rating at season start; promotion/relegation at season end; badge on the profile
-- [ ] Tournament entity: name, start time, format, rule set (`Turnir` from Phase 18), rounds, hands per round, entry limits
+- [ ] Tournament entity: name, start time, format, rule set (`Turnir` from Phase 17), rounds, hands per round, entry limits
 - [ ] Format 1 — **duplicate rounds**: every table in a round plays the *same deals* (same seeds, same seat for the same role), so luck of the deal cancels out; ranking by total score
 - [ ] Format 2 — knockout of tables: top 2 of each table advance
 - [ ] Registration, check-in window, automatic seating (avoid seating friends together in duplicate rounds), late no-show → bot + forfeit flag

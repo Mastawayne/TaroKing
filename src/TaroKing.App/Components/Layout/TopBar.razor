@@ -22,14 +22,17 @@
 	</nav>
 	<span class="sp"></span>
 	<div class="theme-pick" role="group" aria-label="Barvna shema">
-		<button type="button" class="t-dark" title="Temna" aria-label="Temna shema" aria-pressed="@(_theme == "dark")" @onclick="@(() => PickAsync("dark"))"></button>
-		<button type="button" class="t-light" title="Svetla" aria-label="Svetla shema" aria-pressed="@(_theme == "light")" @onclick="@(() => PickAsync("light"))"></button>
-		<button type="button" class="t-blue" title="Modra" aria-label="Modra shema" aria-pressed="@(_theme == "blue")" @onclick="@(() => PickAsync("blue"))"></button>
+		<button type="button" class="t-dark" title="Temna" aria-label="Temna shema" aria-pressed="@(_theme == "dark")" @onclick='@(() => PickAsync("dark"))'></button>
+		<button type="button" class="t-light" title="Svetla" aria-label="Svetla shema" aria-pressed="@(_theme == "light")" @onclick='@(() => PickAsync("light"))'></button>
+		<button type="button" class="t-blue" title="Modra" aria-label="Modra shema" aria-pressed="@(_theme == "blue")" @onclick='@(() => PickAsync("blue"))'></button>
 	</div>
 	<div class="account">
 		<AuthorizeView>
 			<Authorized>
-				<a class="me" href="/zgodovina">@context.User.Identity?.Name</a>
+				@if (context.User.IsInRole("Admin") || context.User.IsInRole("Moderator")) {
+					<a href="/admin/prijave" title="Prijave in ukrepi">Moderacija</a>
+				}
+				<a class="me" href="/profil" title="Profil">@context.User.Identity?.Name</a>
 				<form method="post" action="/account/logout" class="inline-form">
 					<AntiforgeryToken />
 					<input type="hidden" name="ReturnUrl" value="/" />

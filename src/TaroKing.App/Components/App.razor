@@ -25,8 +25,31 @@
 
 <body>
 	<Routes @rendermode="InteractiveServer" />
+
+	@*
+		The reconnect modal, in Slovenian. Blazor toggles the classes; the text and the retry
+		policy are ours: a server that restarts takes a minute, so the client keeps trying for
+		two before it gives up and offers a reload.
+	*@
+	<div id="components-reconnect-modal" class="reconnect">
+		<div class="reconnect-box">
+			<div class="reconnect-spinner"></div>
+			<p class="reconnect-trying">Povezava s strežnikom je prekinjena — poskušam znova (<span id="components-reconnect-current-attempt"></span>/<span id="components-reconnect-max-retries"></span>) …</p>
+			<p class="reconnect-failed">Povezave ni bilo mogoče vzpostaviti. Strežnik se morda posodablja.</p>
+			<p class="reconnect-rejected">Seja je potekla. Osveži stran — miza te še čaka.</p>
+			<button type="button" class="btn reconnect-reload" onclick="location.reload()">Osveži</button>
+		</div>
+	</div>
+
 	<script src="@Assets["taroking.js"]"></script>
-	<script src="_framework/blazor.web.js"></script>
+	<script src="_framework/blazor.web.js" autostart="false"></script>
+	<script>
+		Blazor.start({
+			circuit: {
+				reconnectionOptions: { maxRetries: 40, retryIntervalMilliseconds: 3000 }
+			}
+		});
+	</script>
 </body>
 
 </html>

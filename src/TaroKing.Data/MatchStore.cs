@@ -68,6 +68,16 @@ public sealed class MatchStore(IDbContextFactory<TaroKingDbContext> factory) {
 
 		await using TaroKingDbContext db = await factory.CreateDbContextAsync(cancellationToken);
 
+		// A retried archive must never write the same table twice: the first write wins.
+		int existing = await db.Matches
+			.Where(m => m.Kind == finished.Kind && m.SourceId == finished.SourceId)
+			.Select(m => m.Id)
+			.FirstOrDefaultAsync(cancellationToken);
+
+		if (existing != 0) {
+			return existing;
+		}
+
 		Match match = new() {
 			Kind = finished.Kind,
 			SourceId = finished.SourceId,
@@ -129,10 +139,10 @@ public sealed class MatchStore(IDbContextFactory<TaroKingDbContext> factory) {
 			});
 		}
 
-		// The people, as they are right now.
+		// The people, as they are right now. A deleted account is nobody: its seat stays, unrated.
 		string[] userIds = [.. finished.Seats.Where(seat => seat.UserId is not null).Select(seat => seat.UserId!).Distinct()];
 		Dictionary<string, TaroKingUser> users = await db.Users
-			.Where(user => userIds.Contains(user.Id))
+			.Where(user => userIds.Contains(user.Id) && !user.IsDeleted)
 			.ToDictionaryAsync(user => user.Id, cancellationToken);
 
 		match.Rated = users.Count >= 2 && finished.Kind == MatchKind.Online;

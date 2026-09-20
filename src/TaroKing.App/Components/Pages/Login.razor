@@ -16,15 +16,22 @@
 		<section class="card-panel">
 			<p>Prijavljen si kot <strong>@context.User.Identity?.Name</strong>.</p>
 			<div class="button-row">
-				<a class="btn" href="/lobi">v lobi</a>
-				<a class="btn btn-quiet" href="/zgodovina">zgodovina</a>
+				<a class="btn" href="/lobi">V lobi</a>
+				<a class="btn btn-quiet" href="/profil">Profil</a>
 			</div>
 		</section>
 	</Authorized>
 	<NotAuthorized>
 		<section class="card-panel">
 			@if (Napaka is not null) {
-				<p class="notice">Napačno uporabniško ime ali geslo.</p>
+				<p class="notice">@(Napaka switch {
+					"zaklenjeno" => "Preveč napačnih poskusov — račun je zaklenjen za pet minut.",
+					"prepoved" => "Ta račun ima prepoved igranja ali je izbrisan.",
+					_ => "Napačno uporabniško ime ali geslo."
+				})</p>
+			}
+			@if (Sporocilo == "geslo") {
+				<p class="notice notice-ok">Geslo je nastavljeno — prijavi se z njim.</p>
 			}
 
 			<form method="post" action="/account/login" class="account-form">
@@ -42,8 +49,9 @@
 				</label>
 
 				<div class="button-row">
-					<button class="btn" type="submit">prijava</button>
-					<a class="btn btn-quiet" href="/registracija?returnUrl=@Uri.EscapeDataString(ReturnUrl ?? "/")">še nimam računa</a>
+					<button class="btn" type="submit">Prijava</button>
+					<a class="btn btn-quiet" href="/registracija?returnUrl=@Uri.EscapeDataString(ReturnUrl ?? "/")">Še nimam računa</a>
+					<a class="link-button" href="/pozabljeno-geslo">Pozabljeno geslo?</a>
 				</div>
 			</form>
 
@@ -59,4 +67,7 @@
 
 	[SupplyParameterFromQuery(Name = "returnUrl")]
 	public string? ReturnUrl { get; set; }
+
+	[SupplyParameterFromQuery(Name = "sporocilo")]
+	public string? Sporocilo { get; set; }
 }

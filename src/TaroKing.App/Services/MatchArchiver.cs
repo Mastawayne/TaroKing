@@ -5,19 +5,30 @@ using TaroKing.Engine.Session;
 namespace TaroKing.App.Services;
 
 /// <summary>
-/// Writes finished games into the database. A table or a session raises its "finished" once; this
-/// turns what it knows into a <see cref="FinishedMatch"/> and hands it to the store, which settles
-/// the ratings. A guest's game against bots has nobody to remember it for and is skipped.
+/// Turns finished games into <see cref="FinishedMatch"/>es and queues them for the history. A
+/// table or a session raises its "finished" once; the <see cref="ArchiveWorker"/> writes the match
+/// with retries and settles the ratings. A guest's game against bots has nobody to remember it
+/// for and is skipped. Nothing here touches the database, so it is safe to call from a heartbeat.
 /// </summary>
-public sealed class MatchArchiver(MatchStore store, ILogger<MatchArchiver> log) {
+public sealed class MatchArchiver(ArchiveQueue queue, ILogger<MatchArchiver> log) {
 
-	/// <summary>Store an online table. Every seat goes in, member or guest or bot, so the history reads right.</summary>
-	public async Task<int?> ArchiveAsync(OnlineTable table, CancellationToken cancellationToken = default) {
+	/// <summary>Queue an online table. Every seat goes in, member or guest or bot, so the history reads right.</summary>
+	public bool Enqueue(OnlineTable table) {
 		ArgumentNullException.ThrowIfNull(table);
 
-		if (table.Phase != TablePhase.Finished || table.Records.Count == 0) {
-			return null;
+		if (table.Phase != TablePhase.Finished || table.Records.Count == 0 || table.Faulted) {
+			return false;
 		}
+
+		FinishedMatch finished = Distil(table);
+		log.LogInformation("Queued online match {SourceId} for the archive.", finished.SourceId);
+
+		return queue.Enqueue(finished, table.Id);
+	}
+
+	/// <summary>What the history will hold for this table.</summary>
+	public static FinishedMatch Distil(OnlineTable table) {
+		ArgumentNullException.ThrowIfNull(table);
 
 		IReadOnlyList<int> finals = table.Sheet.FinalTotals();
 
@@ -36,7 +47,7 @@ public sealed class MatchArchiver(MatchStore store, ILogger<MatchArchiver> log) 
 				Radlci: table.Sheet.Radlci[seat]));
 		}
 
-		FinishedMatch finished = new(
+		return new FinishedMatch(
 			Kind: MatchKind.Online,
 			SourceId: table.Id,
 			Name: table.Options.Name,
@@ -46,16 +57,14 @@ public sealed class MatchArchiver(MatchStore store, ILogger<MatchArchiver> log) 
 			Seats: seats,
 			Hands: Distil(table.Records),
 			Chat: [.. table.Chat.Select(line => new FinishedChat(line.At, line.Seat, line.Who, line.Text, line.FromTable))]);
-
-		return await SaveAsync(finished, cancellationToken);
 	}
 
-	/// <summary>Store a session against bots, if a member played it.</summary>
-	public async Task<int?> ArchiveAsync(LocalGame game, CancellationToken cancellationToken = default) {
+	/// <summary>Queue a session against bots, if a member played it.</summary>
+	public bool Enqueue(LocalGame game) {
 		ArgumentNullException.ThrowIfNull(game);
 
 		if (!game.IsOver || game.Records.Count == 0 || !game.Owner.IsMember || game.Options.IsReplay) {
-			return null;
+			return false;
 		}
 
 		IReadOnlyList<int> finals = game.Sheet.FinalTotals();
@@ -86,34 +95,19 @@ public sealed class MatchArchiver(MatchStore store, ILogger<MatchArchiver> log) 
 			Hands: Distil(game.Records),
 			Chat: []);
 
-		return await SaveAsync(finished, cancellationToken);
+		return queue.Enqueue(finished, null);
 	}
 
-	/// <summary>Archive without waiting, for callers on a hot path. Failures are logged, never thrown.</summary>
+	/// <summary>For the local-games callback: queue and forget.</summary>
 	public void ArchiveLater(LocalGame game) {
-		_ = Task.Run(async () => {
-			try {
-				await ArchiveAsync(game);
-			} catch (Exception error) {
-				log.LogError(error, "Could not archive local game {GameId}.", game.Id);
-			}
-		});
+		try {
+			Enqueue(game);
+		} catch (Exception error) {
+			log.LogError(error, "Could not queue local game {GameId}.", game.Id);
+		}
 	}
 
 	/// <summary>The stored hands need a few numbers the record does not carry; replaying the log gives them.</summary>
 	private static IReadOnlyList<FinishedHand> Distil(IReadOnlyList<HandRecord> records) =>
 		[.. records.Select(record => FinishedHand.From(HandState.Replay(record.Events), record.Number))];
-
-	private async Task<int?> SaveAsync(FinishedMatch finished, CancellationToken cancellationToken) {
-		try {
-			int id = await store.SaveAsync(finished, cancellationToken);
-			log.LogInformation("Archived {Kind} match {SourceId} as #{MatchId}.", finished.Kind, finished.SourceId, id);
-
-			return id;
-		} catch (Exception error) {
-			log.LogError(error, "Could not archive {Kind} match {SourceId}.", finished.Kind, finished.SourceId);
-
-			return null;
-		}
-	}
 }

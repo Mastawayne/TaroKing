@@ -41,3 +41,7 @@ Thumbs.db
 
 ## Local review notes
 CodeReview.md
+
+## Run-time data next to the app (keys, backups, the dev database)
+src/TaroKing.App/App_Data/keys/
+src/TaroKing.App/App_Data/backups/

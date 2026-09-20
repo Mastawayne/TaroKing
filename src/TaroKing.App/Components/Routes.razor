@@ -1,6 +1,18 @@
 <Router AppAssembly="typeof(Program).Assembly">
 	<Found Context="routeData">
-		<RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+		<AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+			<NotAuthorized>
+				@if (context.User.Identity?.IsAuthenticated == true) {
+					<section class="card-panel intro">
+						<h2>Ni dostopa</h2>
+						<p class="lead">Za to stran nimaš pravic.</p>
+						<a class="btn btn-quiet" href="/">Domov</a>
+					</section>
+				} else {
+					<RedirectToLogin />
+				}
+			</NotAuthorized>
+		</AuthorizeRouteView>
 		<FocusOnNavigate RouteData="routeData" Selector="h1" />
 	</Found>
 </Router>

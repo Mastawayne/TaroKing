@@ -24,10 +24,30 @@ public sealed class TaroKingUser : IdentityUser {
 
 	public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+	// --- moderation (Phase 16) ---
+
+	/// <summary>Chat is refused until this moment. Null: not muted.</summary>
+	public DateTimeOffset? MutedUntil { get; set; }
+
+	/// <summary>Login and sitting down are refused until this moment; <see cref="DateTimeOffset.MaxValue"/> is permanent. Null: not banned.</summary>
+	public DateTimeOffset? BannedUntil { get; set; }
+
+	public string? BanReason { get; set; }
+
+	/// <summary>The last warning a moderator sent, shown once on the profile page.</summary>
+	public string? Warning { get; set; }
+
+	/// <summary>The account was deleted on request and anonymised; nothing personal is left on it.</summary>
+	public bool IsDeleted { get; set; }
+
 	public List<MatchSeat> Seats { get; set; } = [];
 
 	/// <summary>Whether the lobby should quietly warn people about this player.</summary>
 	public bool IsFrequentLeaver => MatchesPlayed >= 4 && MatchesAbandoned * 4 > MatchesPlayed;
+
+	public bool IsMuted(DateTimeOffset now) => MutedUntil is DateTimeOffset until && until > now;
+
+	public bool IsBanned(DateTimeOffset now) => BannedUntil is DateTimeOffset until && until > now;
 }
 
 public enum MatchKind {
@@ -229,6 +249,12 @@ public sealed class ChatMessage {
 	public bool FromTable { get; set; }
 }
 
+public enum ReportStatus {
+	Open = 0,
+	Dismissed = 1,
+	Actioned = 2
+}
+
 /// <summary>Somebody asked for somebody else to be kept off their tables.</summary>
 public sealed class BlacklistReport {
 
@@ -245,4 +271,106 @@ public sealed class BlacklistReport {
 	public string Reason { get; set; } = "";
 
 	public DateTimeOffset At { get; set; }
+
+	// --- moderation (Phase 16) ---
+
+	public ReportStatus Status { get; set; }
+
+	public string? HandledById { get; set; }
+
+	public DateTimeOffset? HandledAt { get; set; }
+}
+
+/// <summary>What a moderator did, to whom, and why. Never deleted.</summary>
+public sealed class ModerationAction {
+
+	public int Id { get; set; }
+
+	public string ModeratorId { get; set; } = "";
+
+	public string ModeratorName { get; set; } = "";
+
+	public string TargetUserId { get; set; } = "";
+
+	public string TargetName { get; set; } = "";
+
+	/// <summary>dismiss, warn, mute, unmute, ban, unban.</summary>
+	public string Kind { get; set; } = "";
+
+	public string Reason { get; set; } = "";
+
+	/// <summary>When a mute or ban ends; null for actions without a duration.</summary>
+	public DateTimeOffset? Until { get; set; }
+
+	public int? ReportId { get; set; }
+
+	public DateTimeOffset At { get; set; }
+}
+
+/// <summary>A personal block: the blocked player cannot sit at tables the blocker hosts, and their chat is hidden.</summary>
+public sealed class Block {
+
+	public int Id { get; set; }
+
+	public string UserId { get; set; } = "";
+
+	public string BlockedId { get; set; } = "";
+
+	public DateTimeOffset At { get; set; }
+}
+
+// --- live tables (Phase 15) ---
+
+/// <summary>
+/// An online table as it stands right now, so a restart can put it back. The options, seats and
+/// chat are JSON the app writes and reads; the store does not interpret them.
+/// </summary>
+public sealed class LiveTable {
+
+	/// <summary>The table id the app uses in URLs.</summary>
+	public string Id { get; set; } = "";
+
+	public string Name { get; set; } = "";
+
+	public string HostId { get; set; } = "";
+
+	public string OptionsJson { get; set; } = "";
+
+	public string SeatsJson { get; set; } = "";
+
+	public string ChatJson { get; set; } = "";
+
+	/// <summary>0 waiting, 1 playing, 2 finished — the app's TablePhase.</summary>
+	public int Phase { get; set; }
+
+	public DateTimeOffset OpenedAt { get; set; }
+
+	public DateTimeOffset? StartedAt { get; set; }
+
+	public DateTimeOffset UpdatedAt { get; set; }
+
+	/// <summary>A finished table that has been written to the match history and can be forgotten.</summary>
+	public bool Archived { get; set; }
+
+	public List<LiveEvent> Events { get; set; } = [];
+}
+
+/// <summary>One event of one hand of a live table, written the moment it happens.</summary>
+public sealed class LiveEvent {
+
+	public long Id { get; set; }
+
+	public string TableId { get; set; } = "";
+
+	public LiveTable Table { get; set; } = null!;
+
+	public int HandNumber { get; set; }
+
+	public int Ordinal { get; set; }
+
+	public string Kind { get; set; } = "";
+
+	public int? Seat { get; set; }
+
+	public string Payload { get; set; } = "";
 }

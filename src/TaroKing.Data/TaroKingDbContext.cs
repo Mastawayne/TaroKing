@@ -40,16 +40,28 @@ public sealed class TaroKingDbContext(DbContextOptions<TaroKingDbContext> option
 
 	public DbSet<BlacklistReport> Reports => Set<BlacklistReport>();
 
+	public DbSet<ModerationAction> ModerationActions => Set<ModerationAction>();
+
+	public DbSet<Block> Blocks => Set<Block>();
+
+	public DbSet<LiveTable> LiveTables => Set<LiveTable>();
+
+	public DbSet<LiveEvent> LiveEvents => Set<LiveEvent>();
+
 	protected override void OnModelCreating(ModelBuilder modelBuilder) {
 		base.OnModelCreating(modelBuilder);
 
 		modelBuilder.Entity<TaroKingUser>(user => {
 			user.HasIndex(u => u.Rating);
 			user.Ignore(u => u.IsFrequentLeaver);
+			user.Property(u => u.BanReason).HasMaxLength(200);
+			user.Property(u => u.Warning).HasMaxLength(300);
 		});
 
 		modelBuilder.Entity<Match>(match => {
 			match.HasIndex(m => m.FinishedAt);
+			// The archive may be retried; the same table must never be written twice.
+			match.HasIndex(m => new { m.Kind, m.SourceId }).IsUnique();
 			match.Property(m => m.SourceId).HasMaxLength(32);
 			match.Property(m => m.Name).HasMaxLength(64);
 		});
@@ -130,6 +142,39 @@ public sealed class TaroKingDbContext(DbContextOptions<TaroKingDbContext> option
 			report.HasOne(r => r.Reported)
 				.WithMany()
 				.HasForeignKey(r => r.ReportedId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			report.HasIndex(r => r.Status);
+		});
+
+		modelBuilder.Entity<ModerationAction>(action => {
+			action.HasIndex(a => a.At);
+			action.HasIndex(a => a.TargetUserId);
+			action.Property(a => a.Kind).HasMaxLength(16);
+			action.Property(a => a.Reason).HasMaxLength(300);
+			action.Property(a => a.ModeratorName).HasMaxLength(64);
+			action.Property(a => a.TargetName).HasMaxLength(64);
+		});
+
+		modelBuilder.Entity<Block>(block => {
+			block.HasIndex(b => new { b.UserId, b.BlockedId }).IsUnique();
+		});
+
+		modelBuilder.Entity<LiveTable>(table => {
+			table.HasKey(t => t.Id);
+			table.Property(t => t.Id).HasMaxLength(32);
+			table.Property(t => t.Name).HasMaxLength(64);
+			table.HasIndex(t => t.UpdatedAt);
+		});
+
+		modelBuilder.Entity<LiveEvent>(line => {
+			line.HasIndex(e => new { e.TableId, e.HandNumber, e.Ordinal }).IsUnique();
+			line.Property(e => e.Kind).HasMaxLength(32);
+			line.Property(e => e.Payload).HasMaxLength(256);
+
+			line.HasOne(e => e.Table)
+				.WithMany(t => t.Events)
+				.HasForeignKey(e => e.TableId)
 				.OnDelete(DeleteBehavior.Cascade);
 		});
 	}

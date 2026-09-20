@@ -17,12 +17,20 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaroKing.App", "src\TaroKin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaroKing.Engine.Tests", "tests\TaroKing.Engine.Tests\TaroKing.Engine.Tests.csproj", "{A917E5B0-2457-47F3-AD63-F9AC15E9C431}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{3C9E1F52-6A7B-4D8C-9E0F-2B4D6F8A0C13}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaroKing.LoadTest", "tools\TaroKing.LoadTest\TaroKing.LoadTest.csproj", "{7B4C0E21-5D8A-4F6B-9C2D-1E3F5A7B9D01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7B4C0E21-5D8A-4F6B-9C2D-1E3F5A7B9D01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B4C0E21-5D8A-4F6B-9C2D-1E3F5A7B9D01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B4C0E21-5D8A-4F6B-9C2D-1E3F5A7B9D01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B4C0E21-5D8A-4F6B-9C2D-1E3F5A7B9D01}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2F2CE895-DDDB-4D56-B224-D5A5F99CE639}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2F2CE895-DDDB-4D56-B224-D5A5F99CE639}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F2CE895-DDDB-4D56-B224-D5A5F99CE639}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -53,5 +61,6 @@ Global
 		{2C005A17-C107-4335-9194-713E41437103} = {77E1DDB6-E404-4C1F-A08F-FF42C34BAC51}
 		{D37DF998-79A2-4DE7-9800-439B236A5C9B} = {77E1DDB6-E404-4C1F-A08F-FF42C34BAC51}
 		{A917E5B0-2457-47F3-AD63-F9AC15E9C431} = {E8306F0D-B19F-4105-AECC-537A36AFA055}
+		{7B4C0E21-5D8A-4F6B-9C2D-1E3F5A7B9D01} = {3C9E1F52-6A7B-4D8C-9E0F-2B4D6F8A0C13}
 	EndGlobalSection
 EndGlobal
