@@ -343,6 +343,34 @@ a.btn { display: inline-block; text-decoration: none; }
 
 .check { display: flex; align-items: center; gap: 6px; color: var(--ink-dim); font-size: .9rem; }
 
+/* --- accounts --- */
+
+.topbar .account { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: .9rem; }
+.topbar .account a { color: var(--ink-dim); text-decoration: none; }
+.topbar .account a:hover { color: var(--ink); }
+
+.inline-form { display: inline; margin: 0; }
+
+.link-button {
+  font: inherit;
+  font-size: .9rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--ink-dim);
+  cursor: pointer;
+}
+
+.link-button:hover { color: var(--ink); }
+
+.account-form { display: flex; flex-direction: column; gap: 8px; max-width: 360px; }
+.account-form .field { width: 100%; }
+.account-form .field-label { margin-top: 6px; }
+
+.badge-member { background: rgba(224, 176, 64, .22); color: var(--accent); }
+.badge-warn { background: rgba(224, 106, 90, .24); color: var(--danger); }
+.btn-small { padding: 4px 10px; font-size: .82rem; }
+
 /* --- online tables --- */
 
 .seat-list {

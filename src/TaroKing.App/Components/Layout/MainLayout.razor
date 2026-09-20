@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 
+@using Microsoft.AspNetCore.Components.Authorization
+
 <div class="page">
 	<header class="topbar">
 		<a class="brand" href="/">TaroKing</a>
@@ -7,7 +9,24 @@
 			<a href="/">Domov</a>
 			<a href="/nova-igra">Proti botom</a>
 			<a href="/lobi">Lobi</a>
+			<a href="/lestvica">Lestvica</a>
 		</nav>
+		<div class="account">
+			<AuthorizeView>
+				<Authorized>
+					<a href="/zgodovina">@context.User.Identity?.Name</a>
+					<form method="post" action="/account/logout" class="inline-form">
+						<AntiforgeryToken />
+						<input type="hidden" name="ReturnUrl" value="/" />
+						<button type="submit" class="link-button">odjava</button>
+					</form>
+				</Authorized>
+				<NotAuthorized>
+					<a href="/prijava">prijava</a>
+					<a href="/registracija">registracija</a>
+				</NotAuthorized>
+			</AuthorizeView>
+		</div>
 	</header>
 
 	<main>

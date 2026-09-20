@@ -278,15 +278,20 @@ Kontra ladder: kontra → rekontra → subkontra → mordkontra (×2 each step, 
 
 ## Phase 13 — Accounts, persistence, rating
 
-- [ ] EF Core + SQLite: `Users`, `Matches`, `Hands`, `Events`, `Ratings`, `ChatMessages`
-- [ ] Login/registration (ASP.NET Core Identity) + guest play without an account
-- [ ] Store played games (event log) + history viewer
-- [ ] Rating (Elo-like, per match rather than per trick) + leaderboard — valat.si weights it by match length, the ratio of final scores, and the opponents' starting ratings
-- [ ] Player flags in the lobby, as valat.si does it: member, frequent leaver, number of blacklist reports
-- [ ] Last 30 games visible in history, each round replayable against the bots
-- [ ] Player statistics: success rate per contract type, average difference, pagat ultimo conversion
+- [x] EF Core + SQLite: `Users` (Identity), `Matches`, `MatchSeats`, `Hands`, `Events`, `Ratings`, `ChatMessages`, `Reports`
+- [x] `EventCodec` — the event log written down explicitly (the JSON serialisation deferred from Phase 8); every kind round-trips
+- [x] Login/registration (ASP.NET Core Identity: `AddIdentityCore` + cookies, plain form posts to `/account/*`) + guest play without an account
+- [x] Store played games (event log) + history viewer `/zgodovina`, match page `/partija/{id}`
+- [x] Rating (Elo-like, per match) + leaderboard `/lestvica` — weighted by match length, the ratio of final scores, and the opponents' ratings; needs two members at an online table
+- [x] Player flags on the table page: member, frequent leaver (a bot finished ≥ a quarter of their matches), number of blacklist reports; "prijavi" button for members
+- [x] Last 30 games in history, each hand replayable against the bots — same seed, same chair (`SessionOptions.HumanSeat`)
+- [x] Player statistics: success rate per contract, average difference, pagat ultimo conversion
+- [x] Finished online tables are archived from the heartbeat; a member's session against bots from `LocalGame.Finished`
+- [ ] Generate the initial migration on a machine with the SDK: `dotnet tool install --global dotnet-ef` then `dotnet ef migrations add Initial --project src\TaroKing.Data --startup-project src\TaroKing.App`. Until it exists the app builds the schema with `EnsureCreated` and logs a warning.
 
 **Acceptance**: migrations run on an empty database; a finished game shows up in history and moves the rating; the leaderboard matches the totals.
+
+**Notes**: the `Events` table is one row per event (`Kind`, `Seat`, `Payload`), so a hand is readable in the database and replayable from it. Guests get a localStorage name tag and the default rating; only online matches with at least two members are rated, so nobody farms points off bots. `MembersOnly` tables refuse guests.
 
 ---
 

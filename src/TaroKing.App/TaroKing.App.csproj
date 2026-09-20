@@ -12,4 +12,15 @@
 		<ProjectReference Include="..\TaroKing.Data\TaroKing.Data.csproj" />
 	</ItemGroup>
 
+	<!--
+		The EF tools want the Design package on the *startup* project when generating migrations
+		(`dotnet ef migrations add ... -startup-project src\TaroKing.App`). Design-time only.
+	-->
+	<ItemGroup>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
 </Project>
