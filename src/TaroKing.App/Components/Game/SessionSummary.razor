@@ -1,0 +1,100 @@
+@using TaroKing.App.Services
+
+@*
+	The end of a session or of a table: who won, what each seat did with the hands they declared,
+	and which contracts actually came up. The sheet itself stays below; this is the story it tells.
+*@
+
+<section class="card-panel summary">
+	<h2>@Title</h2>
+
+	<ol class="standings">
+		@foreach (SeatStats seat in Standings) {
+			<li class="@(seat.Seat == YouSeat ? "you" : null)">
+				<span class="standing-name">@seat.Name</span>
+				<span class="standing-score @(seat.Final >= 0 ? "plus" : "minus")">@Signed(seat.Final)</span>
+			</li>
+		}
+	</ol>
+
+	<p class="hint">@Verdict</p>
+
+	<table class="stats">
+		<thead>
+			<tr>
+				<th>igralec</th>
+				<th>skupaj</th>
+				<th>radlci</th>
+				<th>igral</th>
+				<th>dobil</th>
+				<th>najboljša</th>
+				<th>najslabša</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (SeatStats seat in Stats.Seats) {
+				<tr class="@(seat.Seat == YouSeat ? "you" : null)">
+					<td>@seat.Name</td>
+					<td class="@(seat.Total >= 0 ? "plus" : "minus")">@Signed(seat.Total)</td>
+					<td>@seat.Radlci</td>
+					<td>@seat.Declared</td>
+					<td>@seat.DeclaredWon</td>
+					<td class="plus">@Signed(seat.Best)</td>
+					<td class="minus">@Signed(seat.Worst)</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+
+	@if (Stats.Contracts.Count > 0) {
+		<p class="hint">Igrano: @string.Join(", ", Stats.Contracts.Select(tally => $"{tally.Name} ×{tally.Times}"))</p>
+	}
+
+	@if (OnPlayAgain.HasDelegate) {
+		<div class="button-row">
+			<button class="btn" @onclick="OnPlayAgain">še ena sezija</button>
+			<a class="btn btn-quiet" href="/nova-igra">druge nastavitve</a>
+		</div>
+	}
+</section>
+
+@code {
+
+	[Parameter, EditorRequired]
+	public SessionStats Stats { get; set; } = default!;
+
+	[Parameter]
+	public string Title { get; set; } = "Konec sezije";
+
+	/// <summary>The reader's own seat, if they had one.</summary>
+	[Parameter]
+	public int? YouSeat { get; set; }
+
+	[Parameter]
+	public EventCallback OnPlayAgain { get; set; }
+
+	private IReadOnlyList<SeatStats> Standings => [.. Stats.Seats.OrderByDescending(seat => seat.Final)];
+
+	private string Verdict {
+		get {
+			SeatStats best = Standings[0];
+
+			if (YouSeat is not int mine) {
+				return $"Zmagal je {best.Name} po {Stats.Hands} partijah.";
+			}
+
+			if (best.Seat == mine) {
+				return $"Zmagal si ti, po {Stats.Hands} partijah.";
+			}
+
+			SeatStats you = Stats.Seats[mine];
+
+			return $"Zmagal je {best.Name}. Ti si končal na {Place(you)}. mestu po {Stats.Hands} partijah.";
+		}
+	}
+
+	private int Place(SeatStats seat) => Standings.ToList().IndexOf(seat) + 1;
+
+	private static string Signed(int value) =>
+		value.ToString("+#;-#;0", System.Globalization.CultureInfo.InvariantCulture);
+}

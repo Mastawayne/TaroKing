@@ -1,0 +1,53 @@
+@using TaroKing.App.Services
+
+@*
+	Table talk. The table itself speaks here too — who sat down, whose clock ran out, how a hand
+	ended — so the log doubles as the table's own record of what happened.
+*@
+
+<section class="card-panel chat">
+	<h2>Za mizo</h2>
+
+	<ol class="chat-lines">
+		@foreach (ChatLine line in Lines) {
+			<li class="@(line.FromTable ? "from-table" : null)">
+				<span class="chat-who">@(line.FromTable ? "•" : line.Who)</span>
+				<span class="chat-text">@line.Text</span>
+			</li>
+		}
+	</ol>
+
+	<div class="button-row">
+		<input class="field" @bind="_text" @bind:event="oninput" maxlength="200"
+			   @onkeydown="OnKey" placeholder="povej kaj" />
+		<button class="btn btn-quiet" @onclick="Send" disabled="@(string.IsNullOrWhiteSpace(_text))">pošlji</button>
+	</div>
+</section>
+
+@code {
+
+	private string _text = "";
+
+	[Parameter, EditorRequired]
+	public IReadOnlyList<ChatLine> Lines { get; set; } = [];
+
+	[Parameter]
+	public EventCallback<string> OnSay { get; set; }
+
+	private async Task OnKey(KeyboardEventArgs args) {
+		if (args.Key == "Enter") {
+			await Send();
+		}
+	}
+
+	private async Task Send() {
+		if (string.IsNullOrWhiteSpace(_text)) {
+			return;
+		}
+
+		string said = _text;
+		_text = "";
+
+		await OnSay.InvokeAsync(said);
+	}
+}

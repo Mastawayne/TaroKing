@@ -1,0 +1,59 @@
+@page "/lestvica"
+
+@using TaroKing.App.Services
+@using TaroKing.Data
+
+@inject MatchStore Store
+@inject PlayerSession Me
+
+<PageTitle>TaroKing — lestvica</PageTitle>
+
+<h1>Lestvica</h1>
+
+<p class="lead">
+	Rating se premakne po vsaki ocenjeni partiji — spletni mizi z vsaj dvema prijavljenima. Šteje
+	dolžina partije, razmerje končnih izidov in s kom si igral.
+</p>
+
+<section class="card-panel">
+	@if (!_loaded) {
+		<p class="hint">Nalagam…</p>
+	} else if (_entries.Count == 0) {
+		<p class="hint">Še nihče ni odigral ocenjene partije.</p>
+	} else {
+		<table class="stats lobby">
+			<thead>
+				<tr><th>#</th><th>igralec</th><th>rating</th><th>ocenjenih</th><th>vseh</th></tr>
+			</thead>
+			<tbody>
+				@foreach (LeaderboardEntry entry in _entries) {
+					<tr class="@(entry.UserId == Me.Identity.UserId ? "you" : null)">
+						<td class="muted">@entry.Place</td>
+						<td>@entry.Name</td>
+						<td><strong>@entry.Rating</strong></td>
+						<td>@entry.RatedMatches</td>
+						<td>@entry.MatchesPlayed</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+</section>
+
+@code {
+
+	private bool _loaded;
+	private IReadOnlyList<LeaderboardEntry> _entries = [];
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		if (!firstRender) {
+			return;
+		}
+
+		await Me.ResolveAsync();
+		_entries = await Store.LeaderboardAsync();
+		_loaded = true;
+
+		StateHasChanged();
+	}
+}

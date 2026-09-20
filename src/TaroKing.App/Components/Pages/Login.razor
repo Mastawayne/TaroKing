@@ -1,0 +1,62 @@
+@page "/prijava"
+
+@using Microsoft.AspNetCore.Components.Authorization
+
+<PageTitle>TaroKing — prijava</PageTitle>
+
+<h1>Prijava</h1>
+
+@*
+	A plain HTML form. The sign-in has to happen on an HTTP request so the cookie can be written,
+	and a Blazor circuit cannot do that — so this posts to /account/login and comes back signed in.
+*@
+
+<AuthorizeView>
+	<Authorized>
+		<section class="card-panel">
+			<p>Prijavljen si kot <strong>@context.User.Identity?.Name</strong>.</p>
+			<div class="button-row">
+				<a class="btn" href="/lobi">v lobi</a>
+				<a class="btn btn-quiet" href="/zgodovina">zgodovina</a>
+			</div>
+		</section>
+	</Authorized>
+	<NotAuthorized>
+		<section class="card-panel">
+			@if (Napaka is not null) {
+				<p class="notice">Napačno uporabniško ime ali geslo.</p>
+			}
+
+			<form method="post" action="/account/login" class="account-form">
+				<AntiforgeryToken />
+				<input type="hidden" name="ReturnUrl" value="@(ReturnUrl ?? "/")" />
+
+				<label class="field-label" for="login-name">uporabniško ime</label>
+				<input class="field" id="login-name" name="UserName" maxlength="20" autocomplete="username" required />
+
+				<label class="field-label" for="login-password">geslo</label>
+				<input class="field" id="login-password" name="Password" type="password" autocomplete="current-password" required />
+
+				<label class="check">
+					<input type="checkbox" name="RememberMe" value="true" checked /> ostani prijavljen
+				</label>
+
+				<div class="button-row">
+					<button class="btn" type="submit">prijava</button>
+					<a class="btn btn-quiet" href="/registracija?returnUrl=@Uri.EscapeDataString(ReturnUrl ?? "/")">še nimam računa</a>
+				</div>
+			</form>
+
+			<p class="hint">Brez računa lahko igraš kot gost — samo lestvica in zgodovina te ne bosta poznali.</p>
+		</section>
+	</NotAuthorized>
+</AuthorizeView>
+
+@code {
+
+	[SupplyParameterFromQuery(Name = "napaka")]
+	public string? Napaka { get; set; }
+
+	[SupplyParameterFromQuery(Name = "returnUrl")]
+	public string? ReturnUrl { get; set; }
+}

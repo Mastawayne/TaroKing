@@ -1,0 +1,228 @@
+@using TaroKing.Engine
+@using TaroKing.Engine.Announcing
+@using TaroKing.Engine.Bidding
+@using TaroKing.Engine.Cards
+@using TaroKing.Engine.Play
+@using TaroKing.Engine.Session
+
+@*
+	The felt itself: four seats, the trick in the middle, your own hand along the bottom. It draws
+	whatever the server says this seat may see and nothing else, and it decides nothing — a click
+	goes back up as an engine call that the server is free to refuse.
+
+	A spectator has no seat, so the table is drawn from seat 0's side and the bottom row stays empty.
+*@
+
+<div class="table-header">
+	<span class="chip">@PhaseName(View.Phase)</span>
+
+	@if (View.Contract is Contract contract) {
+		<span class="chip chip-accent">@Contracts.Info(contract).SlovenianName</span>
+		<span class="chip">igralec: @NameOf(View.Declarer ?? 0)</span>
+	}
+
+	@if (View.CalledKingSuit is Suit called) {
+		<span class="chip @($"suit-{called.ToString().ToLowerInvariant()}")">klican @called.Symbol()</span>
+	}
+
+	@if (View.KnownPartner is int partner && partner != View.Declarer) {
+		<span class="chip">soigralec: @NameOf(partner)</span>
+	}
+
+	@if (View.GameKontraMultiplier > 1) {
+		<span class="chip chip-danger">×@View.GameKontraMultiplier</span>
+	}
+
+	@if (Radlc) {
+		<span class="chip chip-danger">radlc ×2</span>
+	}
+
+	@if (View.IsSpectator) {
+		<span class="chip">gledaš</span>
+	}
+</div>
+
+@if (View.Announcements.Count > 0) {
+	<div class="table-header">
+		@foreach (AnnouncedBonus announced in View.Announcements) {
+			<span class="chip chip-accent">@Bonuses.Info(announced.Kind).SlovenianName — @NameOf(announced.Seat)</span>
+		}
+	</div>
+}
+
+<div class="table @(Busy ? "table-busy" : null)">
+
+	@foreach (SeatSlot slot in OtherSeats) {
+		<div class="seat seat-@slot.Position @(View.CurrentSeat == slot.Index ? "seat-active" : null)">
+			<div class="seat-name">@NameOf(slot.Index)</div>
+			<div class="seat-badges">
+				@if (View.Declarer == slot.Index) {
+					<span class="badge">igralec</span>
+				}
+				@if (View.KnownPartner == slot.Index && View.Declarer != slot.Index) {
+					<span class="badge">soigralec</span>
+				}
+				@if (SeatNote is not null) {
+					@SeatNote(slot.Index)
+				}
+			</div>
+			<div class="seat-cards" title="@(View.HandSizes[slot.Index]) kart">
+				@for (int card = 0; card < View.HandSizes[slot.Index]; card++) {
+					<span class="card-back"></span>
+				}
+			</div>
+		</div>
+	}
+
+	<div class="trick">
+		@if (View.CurrentTrick.Count == 0 && View.CompletedTricks.Count > 0) {
+			<p class="trick-note">
+				@(View.CompletedTricks.Count). štih je pobral @NameOf(View.CompletedTricks[^1].WinnerSeat)
+			</p>
+		}
+
+		@foreach (TrickCard played in View.CurrentTrick) {
+			<div class="trick-slot trick-@PositionOf(Anchor, played.Seat)">
+				<CardView Card="played.Card" />
+				<span class="trick-owner">@NameOf(played.Seat)</span>
+			</div>
+		}
+
+		@if (View.TakenTalonPacket.Count > 0 && View.Phase == GamePhase.Talon) {
+			<div class="talon-shown">
+				<span class="trick-note">talon</span>
+				@foreach (Card card in View.TakenTalonPacket) {
+					<CardView Card="card" Small="true" />
+				}
+			</div>
+		}
+	</div>
+
+	<div class="seat seat-south @(View.CurrentSeat == Anchor ? "seat-active" : null)">
+		<div class="seat-name">
+			@NameOf(Anchor)
+			@if (View.Declarer == Anchor) {
+				<span class="badge">igralec</span>
+			}
+			@if (SeatNote is not null) {
+				@SeatNote(Anchor)
+			}
+		</div>
+
+		@*
+			Your own cards are in the row below the table, so the south chair only shows a fan when
+			you are watching somebody else sit in it.
+		*@
+		@if (View.IsSpectator) {
+			<div class="seat-cards" title="@(View.HandSizes[Anchor]) kart">
+				@for (int card = 0; card < View.HandSizes[Anchor]; card++) {
+					<span class="card-back"></span>
+				}
+			</div>
+		}
+	</div>
+
+</div>
+
+@if (View.ExposedSeat is int exposed && exposed != View.Seat) {
+	<section class="card-panel">
+		<h2>Odprta roka — @NameOf(exposed)</h2>
+		<div class="hand-row">
+			@foreach (Card card in View.ExposedHand) {
+				<CardView Card="card" Small="true" />
+			}
+		</div>
+	</section>
+}
+
+@*
+	The hand is clickable only while cards are being played; during the lay-away the action panel
+	shows its own copy, so the row would only be in the way.
+*@
+@if (ShowOwnHand && View.Hand.Count > 0) {
+	<div class="hand-row own-hand">
+		@foreach (Card card in View.Hand) {
+			@if (View.Phase == GamePhase.Play) {
+				<CardView Card="card" Legal="IsPlayable(card)" OnSelect="OnPlay" />
+			} else {
+				<CardView Card="card" />
+			}
+		}
+	</div>
+}
+
+@if (View.CompletedTricks.Count > 0) {
+	<section class="card-panel">
+		<h2>Zadnji štih</h2>
+		<div class="hand-row">
+			@foreach (TrickCard played in View.CompletedTricks[^1].Cards) {
+				<CardView Card="played.Card"
+						  Small="true"
+						  Selected="played.Seat == View.CompletedTricks[^1].WinnerSeat" />
+			}
+		</div>
+		<p class="hint">Pobral ga je @NameOf(View.CompletedTricks[^1].WinnerSeat).</p>
+	</section>
+}
+
+@code {
+
+	public readonly record struct SeatSlot(int Index, string Position);
+
+	[Parameter, EditorRequired]
+	public PlayerView View { get; set; } = default!;
+
+	[Parameter, EditorRequired]
+	public Func<int, string> NameOf { get; set; } = default!;
+
+	/// <summary>Somebody else is thinking; dim the felt so nobody clicks into the gap.</summary>
+	[Parameter]
+	public bool Busy { get; set; }
+
+	/// <summary>The hand counts double because the declarer carries a radlc.</summary>
+	[Parameter]
+	public bool Radlc { get; set; }
+
+	[Parameter]
+	public bool ShowOwnHand { get; set; } = true;
+
+	[Parameter]
+	public EventCallback<Card> OnPlay { get; set; }
+
+	/// <summary>An extra badge per seat — a clock, an "away", whatever the table wants to say.</summary>
+	[Parameter]
+	public RenderFragment<int>? SeatNote { get; set; }
+
+	/// <summary>A spectator sits nowhere, so the table is drawn from forehand's side.</summary>
+	private int Anchor => View.IsSpectator ? 0 : View.Seat;
+
+	private IEnumerable<SeatSlot> OtherSeats {
+		get {
+			for (int step = 1; step < TarokConstants.PlayerCount; step++) {
+				int seat = (Anchor + step) % TarokConstants.PlayerCount;
+				yield return new SeatSlot(seat, PositionOf(Anchor, seat));
+			}
+		}
+	}
+
+	/// <summary>You are always south; the turn order runs clockwise from there.</summary>
+	private static string PositionOf(int anchor, int seat) =>
+		((seat - anchor + TarokConstants.PlayerCount) % TarokConstants.PlayerCount) switch {
+			1 => "west",
+			2 => "north",
+			3 => "east",
+			_ => "south"
+		};
+
+	private bool IsPlayable(Card card) =>
+		View.Phase == GamePhase.Play && View.IsYourTurn && View.LegalPlays.Contains(card);
+
+	private static string PhaseName(GamePhase phase) => phase switch {
+		GamePhase.Bidding => "licitacija",
+		GamePhase.KingCall => "klicanje kralja",
+		GamePhase.Talon => "talon",
+		GamePhase.Announcing => "napovedi",
+		GamePhase.Play => "igra",
+		_ => "konec"
+	};
+}

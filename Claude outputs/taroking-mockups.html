@@ -1,0 +1,515 @@
+<title>TaroKing Mockups</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;0,9..144,900;1,9..144,600&display=swap">
+<style>
+/* ---------- chrome (the page around the mockup) ---------- */
+:root{
+	--c-bg:#f3f2ee; --c-fg:#1b1b18; --c-fg2:#6b6a63; --c-line:#dad9d1; --c-panel:#ffffff; --c-acc:#1b1b18; --c-acc-fg:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+	:root:not([data-theme="light"]){ --c-bg:#191917; --c-fg:#ecebe6; --c-fg2:#9c9b93; --c-line:#33332f; --c-panel:#222220; --c-acc:#ecebe6; --c-acc-fg:#191917; }
+}
+:root[data-theme="dark"]{ --c-bg:#191917; --c-fg:#ecebe6; --c-fg2:#9c9b93; --c-line:#33332f; --c-panel:#222220; --c-acc:#ecebe6; --c-acc-fg:#191917; }
+
+body{ background:var(--c-bg); color:var(--c-fg); font-family:'IBM Plex Sans',system-ui,sans-serif; padding-inline:16px; padding-block:20px 48px; margin:0; }
+.chrome{ max-width:1320px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+.chrome h1{ font-size:20px; font-weight:600; margin:0; letter-spacing:-0.01em; }
+.chrome p.lead{ margin:4px 0 0; color:var(--c-fg2); font-size:14px; max-width:70ch; }
+.controls{ display:flex; flex-wrap:wrap; gap:16px 28px; align-items:flex-end; }
+.ctl{ display:flex; flex-direction:column; gap:6px; }
+.ctl label{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--c-fg2); }
+.seg{ display:inline-flex; border:1px solid var(--c-line); border-radius:8px; overflow:hidden; background:var(--c-panel); }
+.seg button{ border:0; background:transparent; color:var(--c-fg); font:inherit; font-size:13px; padding:7px 12px; cursor:pointer; }
+.seg button+button{ border-left:1px solid var(--c-line); }
+.seg button[aria-pressed="true"]{ background:var(--c-acc); color:var(--c-acc-fg); }
+.seg button:focus-visible{ outline:2px solid var(--c-acc); outline-offset:-2px; }
+.ctl.land-only{ display:none; } .ctl.land-only.show{ display:flex; }
+.notes{ background:var(--c-panel); border:1px solid var(--c-line); border-radius:10px; padding:14px 16px; font-size:13.5px; line-height:1.5; display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:8px 24px; }
+.notes b{ font-weight:600; }
+.notes span{ color:var(--c-fg2); }
+.stage{ display:flex; justify-content:center; align-items:flex-start; overflow:hidden; }
+.scaler{ transform-origin:top center; }
+
+/* ---------- frame + app tokens ---------- */
+.frame, .frame *{ box-sizing:border-box; }
+.frame{ position:relative; overflow:hidden; background:var(--bg); color:var(--fg); font-family:'IBM Plex Sans',system-ui,sans-serif; font-size:14px; line-height:1.4; --display:'Sora',system-ui,sans-serif; --serif:'Fraunces',Georgia,serif; }
+.frame[data-d="phone"]{ width:390px; height:844px; border-radius:44px; border:10px solid #111; box-shadow:0 30px 60px rgba(0,0,0,.35); }
+.frame[data-d="land"]{ width:844px; height:390px; border-radius:44px; border:10px solid #111; box-shadow:0 30px 60px rgba(0,0,0,.35); }
+.frame[data-d="desktop"]{ width:1280px; height:820px; border-radius:12px; border:1px solid var(--c-line); box-shadow:0 20px 50px rgba(0,0,0,.18); }
+
+/* Nočna miza — three schemes */
+.frame[data-s="dark"]{ --bg:#0e1113; --bg2:#15191d; --bg3:#1a1f23; --line:#1f2529; --line2:#2a3238; --fg:#eef2f4; --fg2:#8fa1ab; --acc:#e9c46a; --acc-fg:#1a1405; --good:#7dd3c0; --bad:#f28482; --felt:radial-gradient(ellipse at 50% 15%, #1b2a26 0%, #0e1113 62%); --felt-fg:#eef2f4; --felt-fg2:#8fa1ab; --seat:rgba(255,255,255,.05); --seat-on:rgba(233,196,106,.12); --back:repeating-linear-gradient(135deg,#2a3340 0 3px,#1b2229 3px 6px); --back-edge:#3b4855; --panel:rgba(14,17,19,.86); --chip:#1a1f23; --chip-fg:#c9d1d9; --chip-strong:#e9c46a; --chip-strong-fg:#1a1405; --chip-bad:#3a1f22; --chip-bad-fg:#f28482; }
+.frame[data-s="light"]{ --bg:#d9d4c7; --bg2:#e9e5da; --bg3:#cfc9b9; --line:#bdb6a4; --line2:#a89f8a; --fg:#1c1b18; --fg2:#5d594f; --acc:#9a6a15; --acc-fg:#fffaf0; --good:#1b6b41; --bad:#b3291f; --felt:radial-gradient(ellipse at 50% 15%, #2a6b50 0%, #1c4a37 70%); --felt-fg:#f3f6f2; --felt-fg2:#c5d6cb; --seat:rgba(0,0,0,.18); --seat-on:rgba(255,244,214,.18); --back:repeating-linear-gradient(135deg,#7d6a45 0 3px,#5d4e32 3px 6px); --back-edge:#e6d3a0; --panel:#e9e5da; --chip:#cfc9b9; --chip-fg:#1c1b18; --chip-strong:#9a6a15; --chip-strong-fg:#fffaf0; --chip-bad:#e9c4bc; --chip-bad-fg:#8e2419; }
+.frame[data-s="blue"]{ --bg:#0b3a4a; --bg2:#0f4759; --bg3:#12536a; --line:#1c6379; --line2:#2a7b94; --fg:#eaf7fb; --fg2:#a9cdd8; --acc:#ff7a59; --acc-fg:#1c0d08; --good:#c3f73a; --bad:#ffb4a2; --felt:radial-gradient(circle at 50% 30%, #146e86 0%, #0b3a4a 70%); --felt-fg:#ffffff; --felt-fg2:#bfe3ec; --seat:rgba(0,0,0,.22); --seat-on:rgba(255,209,102,.18); --back:repeating-linear-gradient(135deg,#1d6b83 0 4px,#12546a 4px 8px); --back-edge:#8fe3f5; --panel:rgba(7,42,54,.9); --chip:rgba(255,255,255,.12); --chip-fg:#dff2f7; --chip-strong:#ffd166; --chip-strong-fg:#1c1405; --chip-bad:#ff7a59; --chip-bad-fg:#1c0d08; }
+
+/* ---------- app layout ---------- */
+.app{ position:absolute; inset:0; display:flex; flex-direction:column; }
+.top{ display:flex; align-items:center; gap:20px; padding:0 24px; height:56px; flex-shrink:0; border-bottom:1px solid var(--line); background:var(--bg); }
+.frame[data-d="phone"] .top{ height:52px; padding:0 16px; gap:10px; }
+.frame[data-d="land"] .top{ height:40px; padding:0 16px; gap:10px; }
+.brand{ font-family:var(--display); font-weight:800; font-size:20px; letter-spacing:.02em; color:var(--acc); text-decoration:none; }
+.frame[data-d="land"] .brand{ font-size:16px; }
+.top nav{ display:flex; gap:2px; }
+.frame[data-d="phone"] .top nav, .frame[data-d="land"] .top nav{ display:none; }
+.top nav a{ text-decoration:none; color:var(--fg2); font-weight:500; font-size:14px; padding:7px 11px; border-radius:8px; cursor:pointer; }
+.top nav a.on{ color:var(--acc); font-weight:700; background:var(--bg3); }
+.top .sp{ flex:1; }
+.top .me{ display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--fg2); }
+.top .me b{ color:var(--fg); font-weight:600; }
+.top .me svg{ width:18px; height:18px; }
+.top .pbtn{ display:none; gap:6px; }
+.frame[data-d="phone"] .top .pbtn, .frame[data-d="land"] .top .pbtn{ display:inline-flex; }
+.pbtn button{ border:1px solid var(--line2); background:var(--bg3); color:var(--fg); border-radius:8px; padding:4px 9px; font:inherit; font-size:12px; cursor:pointer; }
+.pbtn button[aria-pressed="true"]{ background:var(--acc); color:var(--acc-fg); border-color:transparent; }
+
+.miza{ flex:1; min-height:0; display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:'info centre side'; gap:0; }
+.frame[data-d="phone"] .miza{ display:flex; flex-direction:column; overflow-y:auto; }
+.frame[data-d="land"] .miza{ grid-template-columns:auto minmax(0,1fr) auto; }
+
+/* info column */
+.info{ grid-area:info; display:flex; flex-direction:column; gap:8px; padding:16px 0 16px 24px; width:196px; align-items:flex-start; }
+.info[hidden]{ display:none; }
+.frame[data-d="phone"] .info{ width:auto; flex-direction:row; padding:10px 16px 0; gap:6px; overflow-x:auto; flex-wrap:nowrap; }
+.frame[data-d="land"] .info{ width:150px; padding:10px 0 10px 12px; gap:5px; }
+.chip{ padding:6px 12px; border-radius:999px; background:var(--chip); color:var(--chip-fg); font-size:13px; font-weight:500; white-space:nowrap; }
+.chip.strong{ background:var(--chip-strong); color:var(--chip-strong-fg); font-weight:700; }
+.chip.bad{ background:var(--chip-bad); color:var(--chip-bad-fg); font-weight:700; }
+.frame[data-d="phone"] .chip, .frame[data-d="land"] .chip{ font-size:12px; padding:4px 10px; }
+
+/* the felt in the middle */
+.centre{ grid-area:centre; display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--felt); }
+.frame[data-d="phone"] .centre, .frame[data-d="phone"] .info, .frame[data-d="phone"] .side{ flex:none; }
+.felt{ flex:1; display:flex; align-items:center; justify-content:center; padding:12px 24px 0; min-height:0; }
+.frame[data-d="phone"] .felt{ padding:12px 12px 0; }
+.frame[data-d="land"] .felt{ padding:4px 12px 0; }
+.ring{ display:grid; grid-template-columns:auto auto auto; grid-template-rows:auto auto; grid-template-areas:'w n e' 'w t e'; align-items:center; justify-items:center; column-gap:28px; row-gap:8px; }
+.miza.free .ring{ column-gap:120px; row-gap:24px; }
+.frame[data-d="phone"] .ring{ grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); column-gap:6px; width:100%; }
+.frame[data-d="phone"] .seat{ width:100%; }
+.frame[data-d="phone"] .seat .m{ flex-direction:column; gap:2px; }
+.frame[data-d="phone"] .seat.north{ width:auto; }
+.frame[data-d="phone"] .seat.north .m{ flex-direction:row; gap:8px; }
+.frame[data-d="land"] .ring{ grid-template-columns:auto auto auto; grid-template-rows:auto; grid-template-areas:'w t e'; column-gap:14px; }
+.frame[data-d="land"] .miza.free .ring{ column-gap:80px; }
+.seat{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 14px; border-radius:14px; border:2px solid transparent; background:var(--seat); min-width:150px; color:var(--felt-fg); }
+.frame[data-d="phone"] .seat, .frame[data-d="land"] .seat{ min-width:0; padding:6px 10px; gap:3px; }
+.seat.on{ border-color:var(--acc); background:var(--seat-on); }
+.seat .n{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px; }
+.frame[data-d="phone"] .seat .n, .frame[data-d="land"] .seat .n{ font-size:13px; }
+.seat .badge{ font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; padding:2px 7px; border-radius:6px; background:var(--acc); color:var(--acc-fg); }
+.seat .m{ display:flex; align-items:center; gap:10px; font-size:12px; color:var(--felt-fg2); }
+.backs{ display:inline-flex; }
+.backs span{ width:16px; height:26px; border-radius:4px; background:var(--back); border:1px solid var(--back-edge); display:inline-block; }
+.backs span+span{ margin-left:-9px; }
+.frame[data-d="phone"] .backs span, .frame[data-d="land"] .backs span{ width:11px; height:18px; }
+.frame[data-d="phone"] .backs span+span, .frame[data-d="land"] .backs span+span{ margin-left:-7px; }
+.frame[data-d="phone"] .top .rt, .frame[data-d="land"] .top .rt, .frame[data-d="phone"] .top .me b{ display:none; }
+.seat .m svg{ width:14px; height:14px; }
+.trick{ grid-area:t; position:relative; width:300px; height:236px; }
+.miza.free .trick{ width:360px; height:270px; }
+.frame[data-d="phone"] .trick{ width:200px; height:210px; }
+.frame[data-d="land"] .trick{ width:220px; height:180px; }
+.frame[data-d="land"] .seat.north{ grid-area:t !important; align-self:start; justify-self:center; z-index:1; }
+.trick .slot{ position:absolute; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:12px; color:var(--felt-fg2); }
+.trick .slot.n{ top:0; left:50%; transform:translateX(-50%); }
+.trick .slot.w{ left:0; top:50%; transform:translateY(-50%); }
+.trick .slot.e{ right:0; top:50%; transform:translateY(-50%); }
+.trick .slot.s{ bottom:0; left:50%; transform:translateX(-50%); }
+.trick .empty{ width:64px; height:94px; border-radius:10px; border:2px dashed var(--acc); opacity:.75; }
+.frame[data-d="phone"] .trick .empty{ width:52px; height:76px; }
+.frame[data-d="land"] .trick .empty{ width:40px; height:58px; }
+.frame[data-d="land"] .trick .slot.n{ top:60px; }
+.frame[data-d="land"] .trick .slot > span{ display:none; }
+.trick .note{ position:absolute; bottom:-22px; left:50%; transform:translateX(-50%); white-space:nowrap; font-size:12px; color:var(--felt-fg2); }
+.frame[data-d="land"] .trick .note{ display:none; }
+
+.turn{ align-self:center; display:inline-flex; align-items:center; gap:14px; padding:10px 18px; border-radius:999px; background:var(--bg2); border:1px solid var(--line2); box-shadow:0 10px 30px rgba(0,0,0,.35); margin:18px 0 0; max-width:calc(100% - 32px); }
+.frame[data-d="phone"] .turn{ gap:8px; padding:8px 12px; font-size:12px; margin-top:26px; }
+.frame[data-d="land"] .turn{ gap:8px; padding:4px 12px; font-size:12px; margin-top:4px; }
+.turn .dot{ width:10px; height:10px; border-radius:50%; background:var(--acc); box-shadow:0 0 12px var(--acc); flex-shrink:0; }
+.turn b{ font-family:var(--display); font-weight:700; font-size:15px; color:var(--fg); white-space:nowrap; }
+.frame[data-d="land"] .turn b{ font-size:13px; }
+.turn span{ color:var(--fg2); font-size:13px; }
+.frame[data-d="phone"] .turn span, .frame[data-d="land"] .turn span{ display:none; }
+.turn .clk{ display:inline-flex; align-items:center; gap:5px; font-weight:700; color:var(--acc); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.turn .clk svg{ width:16px; height:16px; }
+.hand{ display:flex; align-items:flex-end; justify-content:center; padding:14px 16px 12px; gap:0; }
+.frame[data-d="phone"] .hand{ padding:12px 8px 10px; }
+.frame[data-d="land"] .hand{ padding:6px 8px 8px; }
+.frame[data-d="land"] .hand[data-h="rows"]{ display:grid; grid-template-columns:repeat(6, auto); gap:4px 6px; justify-content:center; padding:4px 8px 6px; }
+.frame[data-d="land"] .hand[data-h="rows"] .card+.card{ margin-left:0; }
+.frame[data-d="land"] .hand[data-h="rows"] .card{ --cw:44px; --ch:32px; }
+.frame[data-d="land"] .hand[data-h="rows"] .card .glyph, .frame[data-d="land"] .hand[data-h="rows"] .card .art, .frame[data-d="land"] .hand[data-h="rows"] .card .pic, .frame[data-d="land"] .hand[data-h="rows"] .card .win, .frame[data-d="land"] .hand[data-h="rows"] .card .band.b, .frame[data-d="land"] .hand[data-h="rows"] .card .num.b{ display:none; }
+.frame[data-d="land"] .hand[data-h="rows"] .card.dbl{ flex-direction:row; align-items:center; justify-content:center; }
+.frame[data-d="land"] .hand[data-h="rows"] .card .corner, .frame[data-d="land"] .hand[data-h="rows"] .card .num, .frame[data-d="land"] .hand[data-h="rows"] .card .band{ position:static; transform:none; height:auto; font-size:13px; }
+.frame[data-d="land"] .hand[data-h="rows"] .card.suit .corner::after{ content:attr(data-g); margin-left:2px; }
+.frame[data-d="land"] .hand[data-h="stack"]{ padding-top:14px; }
+.frame[data-d="land"] .hand[data-h="stack"] .card+.card{ margin-left:-38px; }
+.frame[data-d="land"] .hand[data-h="stack"] .card.legal{ transform:translateY(-10px); }
+.frame[data-d="land"] .hand[data-h="stack"] .card.legal:hover{ transform:translateY(-18px); }
+
+/* side column */
+.side{ grid-area:side; width:320px; display:flex; flex-direction:column; gap:12px; padding:16px 24px 16px 0; min-height:0; }
+.side:empty{ display:none; }
+.frame[data-d="phone"] .side{ width:auto; padding:12px 16px 24px; }
+.frame[data-d="land"] .side{ width:250px; padding:8px 12px 8px 0; gap:8px; overflow-y:auto; }
+.panel{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px 16px; backdrop-filter:blur(6px); }
+.frame[data-d="land"] .panel{ padding:8px 10px; border-radius:12px; }
+.panel h2{ margin:0 0 8px; font-family:var(--display); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--acc); display:flex; align-items:center; gap:8px; }
+.panel h2 .sp{ flex:1; }
+.panel h2 button{ border:0; background:transparent; color:var(--fg2); cursor:pointer; padding:2px; display:grid; place-items:center; }
+.panel h2 button svg{ width:14px; height:14px; }
+.tbl{ width:100%; border-collapse:collapse; font-size:13px; color:var(--fg); }
+.frame[data-d="land"] .tbl{ font-size:11px; }
+.tbl th{ text-align:right; padding:5px 6px; font-weight:600; color:var(--fg2); }
+.tbl th:first-child,.tbl td:first-child,.tbl th:nth-child(2),.tbl td:nth-child(2){ text-align:left; color:var(--fg2); }
+.tbl th.you{ color:var(--acc); }
+.tbl td{ text-align:right; padding:5px 6px; font-variant-numeric:tabular-nums; }
+.frame[data-d="land"] .tbl td, .frame[data-d="land"] .tbl th{ padding:2px 4px; }
+.tbl td.p{ color:var(--good); } .tbl td.m{ color:var(--bad); }
+.tbl tfoot tr{ border-top:1px solid var(--line2); }
+.tbl tfoot td{ font-weight:700; }
+.tbl tfoot tr.r td{ font-weight:500; color:var(--bad); letter-spacing:.1em; }
+.chat ul{ list-style:none; margin:0 0 10px; padding:0; display:flex; flex-direction:column; gap:6px; font-size:13px; }
+.frame[data-d="land"] .chat ul{ font-size:11px; gap:3px; margin-bottom:6px; }
+.chat li i{ color:var(--fg2); }
+.chat li b{ color:var(--acc); font-weight:600; }
+.chat form{ display:flex; gap:8px; }
+.chat input{ flex:1; min-width:0; padding:8px 12px; border-radius:10px; border:1px solid var(--line2); background:var(--bg3); color:var(--fg); font:inherit; }
+.chat button{ padding:8px 14px; border-radius:10px; border:0; background:var(--acc); color:var(--acc-fg); font:inherit; font-weight:700; cursor:pointer; }
+.frame[data-d="land"] .chat input, .frame[data-d="land"] .chat button{ padding:5px 9px; font-size:12px; }
+.sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+/* ---------- cards ---------- */
+.card{ --cw:84px; --ch:124px; position:relative; flex-shrink:0; width:var(--cw); height:var(--ch); border-radius:9px; display:flex; align-items:center; justify-content:center; padding:0; font:inherit; cursor:default; box-shadow:0 6px 16px rgba(0,0,0,.45); border:1px solid rgba(0,0,0,.4); overflow:hidden; color:#2b2420; background:#f6efdc; }
+.card.sm{ --cw:64px; --ch:94px; }
+.card.lg{ --cw:110px; --ch:162px; }
+.frame[data-d="phone"] .hand .card{ --cw:60px; --ch:90px; }
+.frame[data-d="land"] .hand .card{ --cw:56px; --ch:82px; }
+.frame[data-d="phone"] .trick .card{ --cw:52px; --ch:76px; }
+.frame[data-d="land"] .trick .card{ --cw:40px; --ch:58px; }
+.hand .card+.card{ margin-left:-22px; }
+.frame[data-d="phone"] .hand .card+.card{ margin-left:-32px; }
+.frame[data-d="land"] .hand .card+.card{ margin-left:-30px; }
+.card.legal{ cursor:pointer; }
+.card.legal:hover,.card.legal:focus-visible{ transform:translateY(-14px); box-shadow:0 14px 26px rgba(0,0,0,.5), 0 0 0 3px var(--acc); z-index:2; outline:none; }
+.card.dim{ opacity:.38; filter:grayscale(.6); }
+/* plain suits */
+.card.suit.red{ color:#b3271c; }
+.card.suit .corner{ position:absolute; top:6px; left:8px; font-size:13px; font-weight:700; font-family:var(--serif); }
+.card.suit .glyph{ font-size:40px; line-height:1; }
+.card.sm .glyph{ font-size:26px; }
+.card.lg .glyph{ font-size:54px; }
+.frame[data-d="phone"] .hand .card .glyph{ font-size:28px; }
+.frame[data-d="land"] .hand .card .glyph{ font-size:24px; }
+.frame[data-d="land"] .trick .card .glyph{ font-size:18px; }
+/* trumps — A is the Klasika you liked; B–F follow the valat.si layout: numeral on the top edge, a full picture, the scene mirrored on the bottom half */
+.tr{ font-family:var(--serif); }
+.tr .num{ font-weight:800; line-height:1; }
+.tr .art{ display:block; }
+/* a · Klasika (unchanged) */
+.tr[data-k="a"]{ background:#f6efdc; box-shadow:0 6px 16px rgba(0,0,0,.45), inset 0 0 0 3px #f6efdc, inset 0 0 0 4px #8a7040, inset 0 0 0 6px #f6efdc, inset 0 0 0 7px #c9b384; }
+.tr[data-k="a"] .num{ position:absolute; font-size:calc(var(--ch) * .12); letter-spacing:.02em; color:#3b2c14; }
+.tr[data-k="a"] .num.t{ top:7%; left:11%; } .tr[data-k="a"] .num.b{ bottom:7%; right:11%; transform:rotate(180deg); }
+.tr[data-k="a"] .art{ width:52%; height:52%; }
+/* double-ended layout shared by b, d, e, f */
+.tr.dbl{ flex-direction:column; align-items:stretch; justify-content:stretch; }
+.tr.dbl .band{ height:14%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:calc(var(--ch) * .105); line-height:1; letter-spacing:.03em; }
+.tr.dbl .band.b{ transform:rotate(180deg); }
+.tr.dbl .pic{ flex:1; min-height:0; display:flex; flex-direction:column; margin:0 6%; }
+.tr.dbl .half{ flex:1; min-height:0; display:block; overflow:hidden; }
+.tr.dbl .half svg{ display:block; width:100%; height:100%; }
+.tr.dbl .half.b{ transform:rotate(180deg); }
+/* b · Dunajska — cream card, thin brown frame, full colour, mirrored */
+.tr[data-k="b"]{ background:#f6efdc; box-shadow:0 6px 16px rgba(0,0,0,.45), inset 0 0 0 2px #f6efdc, inset 0 0 0 3px #8a7040; }
+.tr[data-k="b"] .band{ color:#3b2c14; }
+.tr[data-k="b"] .pic{ border:1px solid #8a7040; }
+.tr[data-k="b"] .half.b{ border-top:1px solid #8a7040; }
+.frame[data-d="phone"] .hand .tr.dbl .band, .frame[data-d="land"] .hand .tr.dbl .band{ justify-content:flex-start; padding-left:9%; font-size:calc(var(--ch) * .1); }
+.frame[data-d="phone"] .hand .tr[data-k="a"] .num, .frame[data-d="phone"] .hand .tr[data-k="c"] .num{ left:9%; }
+/* c · Okno — Klasika frame and corner numerals, the picture in a window */
+.tr[data-k="c"]{ background:#f6efdc; box-shadow:0 6px 16px rgba(0,0,0,.45), inset 0 0 0 3px #f6efdc, inset 0 0 0 4px #8a7040, inset 0 0 0 6px #f6efdc, inset 0 0 0 7px #c9b384; }
+.tr[data-k="c"] .num{ position:absolute; font-size:calc(var(--ch) * .12); letter-spacing:.02em; color:#3b2c14; }
+.tr[data-k="c"] .num.t{ top:7%; left:11%; } .tr[data-k="c"] .num.b{ bottom:7%; right:11%; transform:rotate(180deg); }
+.tr[data-k="c"] .win{ display:block; width:74%; height:46%; border:1.5px solid #5b4a2b; box-shadow:0 0 0 2px #f6efdc, 0 0 0 3px #c9b384; overflow:hidden; }
+.tr[data-k="c"] .win svg{ display:block; width:100%; height:100%; }
+/* d · Gravura — one ink, sepia paper, hatched */
+.tr[data-k="d"]{ background:#f3ead6; background-image:repeating-linear-gradient(0deg, rgba(90,61,30,.07) 0 1px, transparent 1px 3px); box-shadow:0 6px 16px rgba(0,0,0,.45), inset 0 0 0 2px #f3ead6, inset 0 0 0 3px #5a3d1e; }
+.tr[data-k="d"] .band{ color:#5a3d1e; font-style:italic; }
+.tr[data-k="d"] .pic{ border:1px solid #5a3d1e; }
+.tr[data-k="d"] .half.b{ border-top:1px solid #5a3d1e; }
+/* e · Nočna — dark field, gold frame and numerals */
+.tr[data-k="e"]{ background:#1b2436; color:#f0c04a; box-shadow:0 6px 16px rgba(0,0,0,.55), inset 0 0 0 2px #1b2436, inset 0 0 0 3px #c9a24a; }
+.tr[data-k="e"] .band{ color:#f0c04a; }
+.tr[data-k="e"] .pic{ border:1px solid #c9a24a; }
+.tr[data-k="e"] .half.b{ border-top:1px solid #c9a24a; }
+/* f · Lesorez — red and blue on cream, like old two-colour woodcuts */
+.tr[data-k="f"]{ background:#f7f1e1; box-shadow:0 6px 16px rgba(0,0,0,.45), inset 0 0 0 2px #f7f1e1, inset 0 0 0 3.5px #a3271f; }
+.tr[data-k="f"] .band{ color:#a3271f; }
+.tr[data-k="f"] .pic{ border:1.5px solid #1f3a5f; }
+.tr[data-k="f"] .half.b{ border-top:1.5px solid #1f3a5f; }
+
+/* ---------- gallery screen ---------- */
+.gal{ flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:18px; }
+.gal h1{ margin:0; font-family:var(--display); font-size:22px; }
+.gal p{ margin:0; color:var(--fg2); max-width:70ch; }
+.styles{ display:flex; flex-direction:column; gap:14px; }
+.style{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px; }
+.style.on{ border-color:var(--acc); box-shadow:0 0 0 1px var(--acc); }
+.style .hd{ display:flex; align-items:center; gap:10px; }
+.style .hd b{ font-family:var(--display); font-size:16px; }
+.style .hd .sp{ flex:1; }
+.style .hd button{ padding:6px 12px; border-radius:8px; border:1px solid var(--line2); background:var(--bg3); color:var(--fg); font:inherit; font-weight:600; cursor:pointer; }
+.style.on .hd button{ background:var(--acc); color:var(--acc-fg); border-color:transparent; }
+.style .row{ display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+.style .row .card{ cursor:default; }
+.style small{ color:var(--fg2); font-size:12.5px; line-height:1.45; }
+</style>
+
+<div class="chrome">
+	<div>
+		<h1>TaroKing Mockups</h1>
+		<p class="lead">Smer 2 · Nočna miza. Tri barvne sheme (svetla je zdaj umirjena), vklopljive plošče, tri naprave in šest slogov tarokov — A je Klasika, B–F sledijo postavitvi z valat.si (številka zgoraj, slika čez karto, spodnja polovica obrnjena). Ko so vse plošče skrite, se igralci razmaknejo od sredine. Ležeči telefon ima tri načine za karte v roki: pahljača, kup, dve vrsti.</p>
+	</div>
+	<div class="controls">
+		<div class="ctl"><label>Shema</label><div class="seg" data-k="s"><button aria-pressed="true" data-v="dark">Temna</button><button data-v="light">Svetla</button><button data-v="blue">Modra</button></div></div>
+		<div class="ctl"><label>Plošče</label><div class="seg" data-k="panels"><button aria-pressed="true" data-v="info">Info</button><button aria-pressed="true" data-v="sheet">Zapisnik</button><button aria-pressed="true" data-v="chat">Klepet</button></div></div>
+		<div class="ctl"><label>Taroki</label><div class="seg" data-k="k"><button aria-pressed="true" data-v="a">A · Klasika</button><button data-v="b">B · Dunajska</button><button data-v="c">C · Okno</button><button data-v="d">D · Gravura</button><button data-v="e">E · Nočna</button><button data-v="f">F · Lesorez</button></div></div>
+		<div class="ctl"><label>Naprava</label><div class="seg" data-k="d"><button aria-pressed="true" data-v="desktop">Desktop 1280</button><button data-v="phone">Telefon pokončno</button><button data-v="land">Telefon ležeče</button></div></div>
+		<div class="ctl land-only"><label>Karte v roki (ležeče)</label><div class="seg" data-k="h"><button aria-pressed="true" data-v="fan">Pahljača</button><button data-v="stack">Kup</button><button data-v="rows">Dve vrsti</button></div></div>
+		<div class="ctl"><label>Zaslon</label><div class="seg" data-k="p"><button aria-pressed="true" data-v="miza">Miza</button><button data-v="karte">Slogi tarokov</button></div></div>
+	</div>
+	<div class="notes" id="notes"></div>
+	<div class="stage"><div class="scaler" id="scaler">
+		<div class="frame" id="frame" data-s="dark" data-d="desktop" data-k="a">
+			<div class="app" id="app"></div>
+		</div>
+	</div></div>
+</div>
+
+<script>
+const ICON = {
+	user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
+	clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+	x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+};
+
+/* Original motifs for the trumps, drawn in whatever palette the style asks for.
+   ink = line colour, a = first fill, b = second fill, gold = highlight. */
+function art(name, p){
+	const { ink, a, b, gold } = p;
+	const svg = inner => `<svg viewBox="0 0 64 64" class="art" aria-hidden="true">${inner}</svg>`;
+	switch(name){
+		case 'moon': return svg(`<circle cx="34" cy="32" r="20" fill="${a}"/><circle cx="43" cy="28" r="18" fill="${b}"/><circle cx="37" cy="31" r="2" fill="${ink}"/><path d="M30 42q-4 6 0 10" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round"/>`);
+		case 'sun': return svg(`<g stroke="${ink}" stroke-width="3" stroke-linecap="round"><path d="M32 6v8M32 50v8M6 32h8M50 32h8M13.6 13.6l5.7 5.7M44.7 44.7l5.7 5.7M13.6 50.4l5.7-5.7M44.7 19.3l5.7-5.7"/></g><circle cx="32" cy="32" r="12" fill="${gold}" stroke="${ink}" stroke-width="3"/><circle cx="28" cy="30" r="1.5" fill="${ink}"/><circle cx="36" cy="30" r="1.5" fill="${ink}"/><path d="M27 36q5 4 10 0" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round"/>`);
+		case 'star': return svg(`<path d="M32 6l7 17 18 1-14 11 5 18-16-10-16 10 5-18L7 24l18-1z" fill="${gold}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>`);
+		case 'cap': return svg(`<path d="M12 42c6-16 12-22 20-22s14 6 20 22z" fill="${a}" stroke="${ink}" stroke-width="2"/><path d="M12 42Q22 34 32 42T52 42" fill="none" stroke="${gold}" stroke-width="4" stroke-linecap="round"/><circle cx="12" cy="42" r="4" fill="${gold}" stroke="${ink}" stroke-width="1.5"/><circle cx="52" cy="42" r="4" fill="${gold}" stroke="${ink}" stroke-width="1.5"/><circle cx="32" cy="20" r="4" fill="${gold}" stroke="${ink}" stroke-width="1.5"/><path d="M20 52h24" stroke="${b}" stroke-width="4" stroke-linecap="round"/>`);
+		case 'juggler': return svg(`<circle cx="32" cy="18" r="6" fill="${a}" stroke="${ink}" stroke-width="1.5"/><path d="M32 24v16M32 30l-10 6M32 30l10 6M32 40l-7 14M32 40l7 14" stroke="${b}" stroke-width="3.5" stroke-linecap="round"/><circle cx="16" cy="18" r="3" fill="${gold}" stroke="${ink}" stroke-width="1"/><circle cx="48" cy="18" r="3" fill="${gold}" stroke="${ink}" stroke-width="1"/><circle cx="32" cy="6" r="3" fill="${gold}" stroke="${ink}" stroke-width="1"/>`);
+		case 'tower': return svg(`<path d="M20 58V22h24v36z" fill="${a}" stroke="${ink}" stroke-width="2"/><path d="M16 22h32M20 22v-6h5v6M27 22v-6h5v6M34 22v-6h5v6" fill="${b}" stroke="${ink}" stroke-width="2"/><path d="M29 58V44h6v14" fill="${gold}" stroke="${ink}" stroke-width="2"/>`);
+		case 'ship': return svg(`<path d="M8 40h48l-6 12H14z" fill="${a}" stroke="${ink}" stroke-width="2"/><path d="M32 40V12M32 14l16 12H32M32 18L18 30h14" fill="${b}" stroke="${ink}" stroke-width="2" stroke-linejoin="round"/><path d="M6 54q6 4 12 0t12 0 12 0 12 0" fill="none" stroke="${ink}" stroke-width="2"/>`);
+		default: return svg(`<g fill="none" stroke="${ink}" stroke-width="2.5"><path d="M32 8l8 16 16 8-16 8-8 16-8-16-16-8 16-8z"/><circle cx="32" cy="32" r="8"/></g><circle cx="32" cy="32" r="3" fill="${gold}"/>`);
+	}
+}
+const MOTIF = { 'ŠKIS':'cap', 'XXI':'moon', 'XX':'sun', 'XIX':'star', 'XVIII':'tower', 'XVII':'ship', 'I':'juggler' };
+const PALETTE = { a:{ ink:'#7a2e1c', a:'#1f3a5f', b:'#f6efdc', gold:'#e6b95a' } };
+
+/* Genre scenes in the spirit of the old Austrian tarok pictures (people, animals, landscapes).
+   Each is a landscape strip (80×48); the double-ended styles show it twice, the lower copy turned. */
+const SCENE_OF = { 'ŠKIS':'fool', 'XXI':'moon', 'XX':'sun', 'XIX':'star', 'XVIII':'tower', 'XVII':'ship', 'XIV':'hunter', 'IX':'mill', 'VII':'dance', 'V':'bird', 'II':'horse', 'I':'juggler' };
+const SCENES = {
+	full:  { sky:'#cfe3ee', night:'#2c3e63', ground:'#a4bf7e', ground2:'#7fa25e', ink:'#3b2c14', cloth:'#a3271f', cloth2:'#1f3a5f', skin:'#f1d2b0', gold:'#e6b95a', water:'#6f9fc4', wall:'#f3e8cf', roof:'#a3271f', tree:'#4e7a4a', trunk:'#6b4a2b' },
+	sepia: { sky:'#efe4cc', night:'#c9b58c', ground:'#dccb9f', ground2:'#c6b07e', ink:'#5a3d1e', cloth:'#8a6238', cloth2:'#5a3d1e', skin:'#eadbb8', gold:'#b98d4c', water:'#cdbc92', wall:'#ece0c0', roof:'#8a6238', tree:'#a68a58', trunk:'#5a3d1e' },
+	night: { sky:'#2a3852', night:'#1c2740', ground:'#3f5a4e', ground2:'#2f4a3e', ink:'#efe1b8', cloth:'#c9553f', cloth2:'#7f9cc6', skin:'#f0d3a8', gold:'#f0c04a', water:'#3c5f8a', wall:'#d9c9a2', roof:'#b4463a', tree:'#3f6a4c', trunk:'#8a6238' },
+	duo:   { sky:'#f7f1e1', night:'#c9d6e6', ground:'#c9d6e6', ground2:'#a9bdd6', ink:'#1f3a5f', cloth:'#a3271f', cloth2:'#1f3a5f', skin:'#f7f1e1', gold:'#a3271f', water:'#a9bdd6', wall:'#f7f1e1', roof:'#a3271f', tree:'#1f3a5f', trunk:'#1f3a5f' }
+};
+const SCENE_PALETTE = { b:'full', c:'full', d:'sepia', e:'night', f:'duo' };
+
+const D = {
+	base: (P, night=false) => `<rect width="80" height="48" fill="${night?P.night:P.sky}"/><path d="M0 30Q20 22 42 30T80 27V48H0z" fill="${P.ground}"/><path d="M0 38Q30 32 55 40T80 38V48H0z" fill="${P.ground2}"/>`,
+	man: (x, y, P, cloth, arms='M-2.5-7l-3 5M2.5-7l3 5') => `<g transform="translate(${x} ${y})"><circle cx="0" cy="-11" r="2.6" fill="${P.skin}" stroke="${P.ink}" stroke-width=".6"/><path d="M-2.5-8h5l1.6 8h-8.2z" fill="${cloth}" stroke="${P.ink}" stroke-width=".6"/><path d="M-1.8 0v6M1.8 0v6" stroke="${P.ink}" stroke-width="1.5" stroke-linecap="round"/><path d="${arms}" stroke="${P.ink}" stroke-width="1.2" stroke-linecap="round" fill="none"/></g>`,
+	fir: (x, y, P, s=1) => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-1.4" y="-6" width="2.8" height="6" fill="${P.trunk}"/><path d="M0-22l8 10h-4l6 8H-10l6-8h-4z" fill="${P.tree}" stroke="${P.ink}" stroke-width=".6"/></g>`,
+	oak: (x, y, P, s=1) => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-1.5" y="-7" width="3" height="7" fill="${P.trunk}"/><circle cx="0" cy="-13" r="7" fill="${P.tree}" stroke="${P.ink}" stroke-width=".6"/><circle cx="-5" cy="-9" r="4" fill="${P.tree}"/><circle cx="5" cy="-9" r="4" fill="${P.tree}"/></g>`,
+	house: (x, y, P, s=1) => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-8" y="-8" width="16" height="8" fill="${P.wall}" stroke="${P.ink}" stroke-width=".6"/><path d="M-9-8l9-7 9 7z" fill="${P.roof}" stroke="${P.ink}" stroke-width=".6"/><rect x="-2" y="-4.5" width="4" height="4.5" fill="${P.ink}"/></g>`,
+	sheep: (x, y, P) => `<g transform="translate(${x} ${y})"><ellipse cx="0" cy="0" rx="3.4" ry="2.3" fill="${P.wall}" stroke="${P.ink}" stroke-width=".6"/><circle cx="3.2" cy="-.8" r="1.3" fill="${P.ink}"/><path d="M-2 2v2M1 2v2" stroke="${P.ink}" stroke-width=".9"/></g>`,
+	dog: (x, y, P) => `<path transform="translate(${x} ${y})" d="M-6 0h9l1.5-3.5 2.5.6-1.2 3.4-.8 5h-1.6l-.6-3.4h-5l-.6 3.4H-5l-.7-4.4z" fill="${P.ink}"/>`,
+	gull: (x, y, P) => `<path d="M${x-4} ${y}q2-3 4 0q2-3 4 0" fill="none" stroke="${P.ink}" stroke-width=".9"/>`,
+	stars: (P) => `<g fill="${P.gold}"><circle cx="8" cy="6" r=".9"/><circle cx="22" cy="10" r=".7"/><circle cx="70" cy="6" r=".9"/><circle cx="52" cy="14" r=".6"/><circle cx="64" cy="18" r=".6"/></g>`
+};
+function scene(name, P){
+	const svg = inner => `<svg viewBox="0 0 80 48" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${inner}</svg>`;
+	const M = D.man, I = P.ink;
+	switch(name){
+		case 'moon': return svg(D.base(P,true)+D.stars(P)+`<circle cx="24" cy="12" r="8" fill="${P.gold}"/><circle cx="28" cy="10" r="7" fill="${P.night}"/>`+D.house(58,40,P,1.1)+`<rect x="43" y="22" width="7" height="18" fill="${P.wall}" stroke="${I}" stroke-width=".6"/><path d="M42 22l4.5-9 4.5 9z" fill="${P.roof}" stroke="${I}" stroke-width=".6"/><path d="M46.5 13v-3M45 11.5h3" stroke="${I}" stroke-width=".8"/>`+D.fir(14,44,P,.9)+D.fir(70,45,P,.7));
+		case 'sun': return svg(D.base(P)+`<g stroke="${P.gold}" stroke-width="1.4" stroke-linecap="round"><path d="M62 2v3M62 17v3M52 10h3M69 10h3M55 3l2 2M67 15l2 2M55 17l2-2M67 5l2-2"/></g><circle cx="62" cy="10" r="5" fill="${P.gold}" stroke="${I}" stroke-width=".6"/>`+D.oak(14,44,P,.9)+M(30,44,P,P.cloth,'M-2.5-7l-4 3M2.5-7l4-6')+`<path d="M36 25l1 14" stroke="${P.trunk}" stroke-width="1"/><path d="M37 25q6-2 8 3" fill="none" stroke="${I}" stroke-width="1.3"/>`+`<g fill="${P.gold}" stroke="${I}" stroke-width=".4"><path d="M52 44l3-10 3 10z"/><path d="M58 44l3-10 3 10z"/></g>`);
+		case 'star': return svg(D.base(P,true)+D.stars(P)+`<path d="M40 3l2.4 5.6 6 .5-4.6 3.9 1.4 5.9-5.2-3.2-5.2 3.2 1.4-5.9L31.6 9.1l6-.5z" fill="${P.gold}" stroke="${I}" stroke-width=".5"/>`+M(16,44,P,P.cloth2,'M-2.5-7l-4 5M2.5-7l4 1')+`<path d="M22 24v20" stroke="${P.trunk}" stroke-width="1.2"/><path d="M22 24q3-2 3 2" fill="none" stroke="${P.trunk}" stroke-width="1.2"/>`+D.sheep(34,44,P)+D.sheep(44,45,P)+D.sheep(54,43,P)+D.sheep(64,45,P)+D.fir(74,42,P,.8));
+		case 'tower': return svg(D.base(P)+`<path d="M18 36q22-16 44 0z" fill="${P.ground}"/><rect x="30" y="18" width="20" height="18" fill="${P.wall}" stroke="${I}" stroke-width=".6"/><rect x="26" y="8" width="8" height="28" fill="${P.wall}" stroke="${I}" stroke-width=".6"/><rect x="46" y="12" width="8" height="24" fill="${P.wall}" stroke="${I}" stroke-width=".6"/><path d="M26 8h2v-2h2v2h2v-2h2v2M46 12h2v-2h2v2h2v-2h2v2" fill="${P.wall}" stroke="${I}" stroke-width=".6"/><path d="M30 5v-5l5 1.5-5 1.5" fill="${P.roof}" stroke="${I}" stroke-width=".5"/><rect x="37" y="28" width="6" height="8" fill="${I}"/><rect x="29" y="14" width="2" height="3" fill="${I}"/><rect x="49" y="18" width="2" height="3" fill="${I}"/>`+D.fir(10,44,P)+D.fir(70,44,P,.9)+D.gull(64,10,P));
+		case 'ship': return svg(`<rect width="80" height="48" fill="${P.sky}"/><rect y="26" width="80" height="22" fill="${P.water}"/><g fill="none" stroke="${P.wall}" stroke-width=".8" opacity=".8"><path d="M0 34q5-3 10 0t10 0 10 0 10 0 10 0 10 0 10 0 10 0"/><path d="M0 42q5-3 10 0t10 0 10 0 10 0 10 0 10 0 10 0 10 0"/></g><path d="M20 30h40l-6 9H27z" fill="${P.trunk}" stroke="${I}" stroke-width=".6"/><path d="M40 30V6" stroke="${I}" stroke-width="1.2"/><path d="M41 8l16 14H41z" fill="${P.wall}" stroke="${I}" stroke-width=".6"/><path d="M39 12L24 26h15z" fill="${P.wall}" stroke="${I}" stroke-width=".6"/><path d="M40 6l6 2-6 2z" fill="${P.roof}"/>`+D.gull(12,12,P)+D.gull(66,8,P)+D.gull(70,16,P));
+		case 'hunter': return svg(D.base(P)+D.fir(8,44,P,1.1)+D.fir(18,45,P,.8)+D.fir(72,44,P)+`<path d="M60 36l2-4 2 4M62 32v-3M63 29l3-2M61 29l-3-2" stroke="${I}" stroke-width="1" stroke-linecap="round" fill="none"/><ellipse cx="62" cy="37" rx="3.2" ry="1.8" fill="${P.trunk}"/><path d="M60 38v3M64 38v3" stroke="${I}" stroke-width="1"/>`+M(34,44,P,P.tree,'M-2.5-7l-4 3M2.5-7l7-3')+`<path d="M35 33l10-4" stroke="${I}" stroke-width="1.4" stroke-linecap="round"/>`+D.dog(46,44,P));
+		case 'mill': return svg(D.base(P)+`<path d="M34 42l2-22h10l2 22z" fill="${P.wall}" stroke="${I}" stroke-width=".6"/><path d="M34 20l7-5 7 5z" fill="${P.roof}" stroke="${I}" stroke-width=".6"/><rect x="39" y="35" width="4" height="7" fill="${I}"/><g stroke="${I}" stroke-width="1.1"><path d="M41 18L27 4M41 18l14 14M41 18L27 32M41 18L55 4"/></g><g fill="${P.wall}" stroke="${I}" stroke-width=".5" opacity=".9"><path d="M29 6l3-3 7 7-3 3z"/><path d="M50 27l3-3 3 3-3 3z"/><path d="M29 30l3 3 7-7-3-3z"/><path d="M50 9l3 3 3-3-3-3z"/></g>`+M(64,44,P,P.cloth2)+`<path d="M58 44h-9" stroke="${P.trunk}" stroke-width="1.2"/>`+D.oak(12,44,P,.8));
+		case 'dance': return svg(D.base(P)+D.oak(66,44,P)+M(30,44,P,P.cloth,'M-2.5-7l-4-4M2.5-7l5 2')+M(42,44,P,P.cloth2,'M-2.5-7l-5 2M2.5-7l4-4')+`<path d="M35 32v-5" stroke="${I}" stroke-width="1" opacity=".5"/>`+`<g fill="${P.gold}"><circle cx="14" cy="12" r="1"/><circle cx="60" cy="8" r=".8"/></g>`+M(12,45,P,P.trunk,'M-2.5-7l-3 2M2.5-7l4-2')+`<path d="M8 38q4-1 8 0" fill="${P.gold}" stroke="${I}" stroke-width=".5"/>`);
+		case 'bird': return svg(`<rect width="80" height="48" fill="${P.sky}"/><path d="M-2 40q30-14 84-10" fill="none" stroke="${P.trunk}" stroke-width="3" stroke-linecap="round"/><path d="M28 32q-4-8 2-10M52 30q4-7-2-10" fill="none" stroke="${P.trunk}" stroke-width="1.6"/><g fill="${P.tree}" stroke="${I}" stroke-width=".4"><ellipse cx="20" cy="30" rx="5" ry="2.5" transform="rotate(-30 20 30)"/><ellipse cx="60" cy="27" rx="5" ry="2.5" transform="rotate(25 60 27)"/><ellipse cx="34" cy="22" rx="4" ry="2" transform="rotate(-50 34 22)"/><ellipse cx="46" cy="21" rx="4" ry="2" transform="rotate(50 46 21)"/></g><ellipse cx="40" cy="26" rx="7" ry="4.5" fill="${P.cloth}" stroke="${I}" stroke-width=".6"/><circle cx="46" cy="22" r="3" fill="${P.cloth}" stroke="${I}" stroke-width=".6"/><path d="M49 22l4 1-4 1z" fill="${P.gold}" stroke="${I}" stroke-width=".4"/><path d="M33 26l-8-4 1 6z" fill="${P.cloth2}" stroke="${I}" stroke-width=".5"/><path d="M38 24q4-2 7 1" fill="none" stroke="${P.cloth2}" stroke-width="1.4"/><circle cx="47" cy="21.4" r=".6" fill="${I}"/>`);
+		case 'horse': return svg(D.base(P)+D.fir(70,44,P,.9)+D.oak(10,44,P,.8)+`<path d="M26 44l2-9q-2-6 4-8h14q6 0 8-6l2-4 3 1-1 4q3 4 0 8l-2 3v11h-2l-1-9h-4l-1 9h-2l-1-9h-8l-2 9z" fill="${P.trunk}" stroke="${I}" stroke-width=".6"/><path d="M52 21l3-2" stroke="${I}" stroke-width="1"/><path d="M28 36q-6 2-6 8" fill="none" stroke="${P.trunk}" stroke-width="2"/>`+M(40,29,P,P.cloth,'M-2.5-7l-3 5M2.5-7l7-1')+`<circle cx="52" cy="22" r=".6" fill="${I}"/>`);
+		case 'juggler': return svg(D.base(P)+`<rect y="40" width="80" height="8" fill="${P.wall}"/><path d="M0 40h80" stroke="${I}" stroke-width=".5"/>`+D.house(12,40,P)+D.house(68,40,P)+M(40,40,P,P.cloth,'M-2.5-7l-5-6M2.5-7l5-6')+`<g fill="${P.gold}" stroke="${I}" stroke-width=".5"><circle cx="32" cy="18" r="2"/><circle cx="40" cy="12" r="2"/><circle cx="48" cy="18" r="2"/><circle cx="44" cy="24" r="2"/></g>`+D.dog(56,40,P));
+		case 'fool': return svg(D.base(P)+D.oak(64,44,P,.9)+M(30,44,P,P.cloth,'M-2.5-7l-5-4M2.5-7l6 1')+`<path d="M27 32l-5-9 5 4 3-7 3 7 5-4-5 9z" fill="${P.cloth2}" stroke="${I}" stroke-width=".6"/><g fill="${P.gold}"><circle cx="22" cy="23" r="1.2"/><circle cx="30" cy="20" r="1.2"/><circle cx="38" cy="23" r="1.2"/></g><path d="M38 38V24" stroke="${P.trunk}" stroke-width="1.2"/><circle cx="38" cy="22" r="2" fill="${P.gold}" stroke="${I}" stroke-width=".5"/>`+D.dog(44,44,P)+`<path d="M8 44q4-6 8 0" fill="none" stroke="${I}" stroke-width=".6"/>`);
+		default: return svg(D.base(P)+D.house(22,42,P)+D.house(50,44,P,1.15)+D.oak(66,44,P,.8)+D.fir(8,44,P,.9)+`<path d="M0 48q30-8 80-4" fill="none" stroke="${P.wall}" stroke-width="2"/>`+D.gull(40,10,P));
+	}
+}
+
+/* The one shared moment: hand 3 of 12, Ana plays solo dva, hearts called, hearts led — you must follow suit. */
+const HAND = [
+	['T','XXI'],['T','XIX'],['T','XIV'],['T','IX'],['T','V'],['T','II'],
+	['H','K'],['H','D'],['H','4'],['S','10'],['C','J'],['D','K']
+];
+const LEGAL = new Set(['K♥','D♥','4♥']);
+const TRICK = [['w','Boris',['H','9']],['n','Ana',['H','K']],['e','Cilka',['H','7']]];
+const SEATS = { w:['Boris',8,'','0:41'], n:['Ana',8,'igralec','1:02'], e:['Cilka',8,'','0:58'] };
+const GLYPH = { H:'♥', D:'♦', S:'♠', C:'♣' };
+const SUIT_NAME = { H:'srce', D:'karo', S:'pik', C:'križ', T:'tarok' };
+
+function card(c, { legal=true, dim=false, size='', k=state.k, button=true }={}){
+	const [suit, rank] = c;
+	const name = suit==='T' ? `${rank==='ŠKIS'?'Škis':rank} · tarok` : `${rank}${GLYPH[suit]} · ${SUIT_NAME[suit]}`;
+	const dbl = suit==='T' && 'bdef'.includes(k);
+	const cls = ['card', size, legal&&!dim?'legal':'', dim?'dim':'', dbl?'dbl':''].filter(Boolean).join(' ');
+	const tag = button && legal && !dim ? 'button' : 'div';
+	const attrs = `class="${cls}${suit==='T'?' tr':' suit'+(suit==='H'||suit==='D'?' red':'')}" title="${name}" ${tag==='button'?`type="button" aria-label="${name}"`:''} ${suit==='T'?`data-k="${k}"`:''}`;
+	if(suit!=='T') return `<${tag} ${attrs}><span class="corner" data-g="${GLYPH[suit]}">${rank}</span><span class="glyph">${GLYPH[suit]}</span></${tag}>`;
+	const label = rank;
+	let inner;
+	if(k==='a'){
+		inner = `<span class="num t">${label}</span>${art(MOTIF[rank] || 'rosette', PALETTE.a)}<span class="num b">${label}</span>`;
+	}else{
+		const pic = scene(SCENE_OF[rank] || 'village', SCENES[SCENE_PALETTE[k]]);
+		inner = k==='c'
+			? `<span class="num t">${label}</span><span class="win">${pic}</span><span class="num b">${label}</span>`
+			: `<span class="band t">${label}</span><span class="pic"><span class="half">${pic}</span><span class="half b">${pic}</span></span><span class="band b">${label}</span>`;
+	}
+	return `<${tag} ${attrs}>${inner}</${tag}>`;
+}
+
+function seat(key){
+	const [n, cards, badge, clock] = SEATS[key];
+	return `<div class="seat ${key==='n'?'on north':''}" style="grid-area:${key}">
+		<div class="n">${n}${badge?`<span class="badge">${badge}</span>`:''}</div>
+		<div class="m"><span class="backs">${'<span></span>'.repeat(cards)}</span><span style="display:inline-flex;align-items:center;gap:4px">${ICON.clock} ${clock}</span></div>
+	</div>`;
+}
+
+function trick(){
+	return `<div class="trick">
+		${TRICK.map(([pos,who,c])=>`<div class="slot ${pos}">${card(c,{legal:false,size:'sm',button:false})}<span>${who}</span></div>`).join('')}
+		<div class="slot s"><div class="empty"></div></div>
+		<span class="note">3. štih · vodi srce</span>
+	</div>`;
+}
+
+function sheet(){
+	const rows = [[1,'tri',[-15,15,15,-15]],[2,'klop',[-35,70,-20,-15]]];
+	const tot = [-50,85,-5,-30];
+	const cell = v => `<td class="${v>0?'p':v<0?'m':''}">${v>0?'+'+v:v}</td>`;
+	return `<section class="panel"><h2>Zapisnik<span class="sp"></span><button type="button" aria-label="Skrij zapisnik" data-hide="sheet">${ICON.x}</button></h2>
+	<table class="tbl"><thead><tr><th>#</th><th>igra</th><th class="you">Ti</th><th>Ana</th><th>Boris</th><th>Cilka</th></tr></thead>
+	<tbody>${rows.map(([n,g,s])=>`<tr><td>${n}</td><td>${g}</td>${s.map(cell).join('')}</tr>`).join('')}</tbody>
+	<tfoot><tr><td colspan="2">skupaj</td>${tot.map(cell).join('')}</tr><tr class="r"><td colspan="2">radlci</td><td>◯</td><td>◯</td><td>◯</td><td>◯</td></tr></tfoot></table></section>`;
+}
+
+function chat(){
+	return `<section class="panel chat"><h2>Za mizo<span class="sp"></span><button type="button" aria-label="Skrij klepet" data-hide="chat">${ICON.x}</button></h2>
+	<ul><li><i>Ana igra solo dva, klican srce.</i></li><li><b>Boris</b> kontra!</li><li><i>Boris je dal kontro na igro.</i></li><li><b>Cilka</b> Ana, to bo boleče :)</li></ul>
+	<form onsubmit="return false"><label class="sr" for="msg">Sporočilo</label><input id="msg" placeholder="Napiši kaj…"><button type="submit">Pošlji</button></form></section>`;
+}
+
+function info(){
+	return `<div class="info" ${state.panels.info?'':'hidden'}>
+		<span class="chip">Partija 3 / 12</span><span class="chip strong">Solo dva</span><span class="chip">Igralec: Ana</span>
+		<span class="chip">Klican: srce ♥</span><span class="chip bad">Kontra ×2</span><span class="chip">Faza: igra</span>
+	</div>`;
+}
+
+function topbar(){
+	return `<header class="top"><a class="brand" href="#">TaroKing</a>
+		<nav><a>Domov</a><a>Proti botom</a><a class="on">Spletne mize</a><a>Lestvica</a></nav><span class="sp"></span>
+		<span class="pbtn">${[['info','Info'],['sheet','Zapisnik'],['chat','Klepet']].map(([k,l])=>`<button type="button" aria-pressed="${state.panels[k]}" data-toggle="${k}">${l}</button>`).join('')}</span>
+		<span class="me">${ICON.user}<b>Damir</b><span class="rt"> · 1042</span></span></header>`;
+}
+
+function renderMiza(){
+	const side = [ state.panels.sheet ? sheet() : '', state.panels.chat ? chat() : '' ].join('');
+	const free = !state.panels.info && !state.panels.sheet && !state.panels.chat;
+	return `${topbar()}<div class="miza ${free?'free':''}">
+		${info()}
+		<div class="centre">
+			<div class="felt"><div class="ring">${seat('n')}${seat('w')}${seat('e')}${trick()}</div></div>
+			<div class="turn"><span class="dot"></span><b>Na potezi si</b><span>srce je vodeno — priznati moraš barvo</span><span class="clk">${ICON.clock} 0:47</span></div>
+			<div class="hand" data-h="${state.h}">${HAND.map(c=>{ const l = c[0]==='T' ? false : LEGAL.has(c[1]+GLYPH[c[0]]); return card(c,{legal:l, dim:!l}); }).join('')}</div>
+		</div>
+		<aside class="side">${side}</aside>
+	</div>`;
+}
+
+const STYLES = {
+	a:['Klasika','Različica, ki ti je bila všeč — nespremenjena: kremna karta z dvojnim okvirjem, rimska številka v obeh kotih (spodnja obrnjena), en motiv na sredini.'],
+	b:['Dunajska','Najbližje valat.si: številka na sredini zgornjega roba, pod njo slika čez vso karto, spodnja polovica je isti prizor obrnjen na glavo (karta se bere z obeh strani). Kremna podlaga, tanek rjav okvir, polne barve.'],
+	c:['Okno','Klasikin okvir in kotni številki, a namesto motiva prava slika v uokvirjenem oknu na sredini. Najlepši kompromis, če hočeš ohraniti A in vseeno dobiti prizore.'],
+	d:['Gravura','Ista dvojna postavitev kot B, a v enem črnilu na sepija papirju s tankimi vodoravnimi črtami — kot bakrorez iz starega tiska. Ležeča številka.'],
+	e:['Nočna','Za temno shemo: temno modro polje, zlat okvir in zlate številke, prizori v zamolklih barvah z nočnim nebom. Najbolj se loči od barvnih kart.'],
+	f:['Lesorez','Dvobarvni tisk — rdeča in modra na kremni podlagi, kot stari ljudski lesorezi. Rdeča številka, moder okvir slike, zrcaljena spodnja polovica.']
+};
+
+function renderKarte(){
+	const sample = [['T','ŠKIS'],['T','XXI'],['T','XX'],['T','XIX'],['T','XVIII'],['T','XVII'],['T','VII'],['T','I']];
+	return `${topbar()}<div class="gal">
+		<div><h1>Slogi tarokov</h1><p>Istih osem kart v vsakem slogu: škis, mond, XX, XIX, XVIII, XVII, VII in pagat. B–F sledijo postavitvi z valat.si: številka na zgornjem robu, slika čez vso karto, spodnja polovica obrnjena. Prizori (norček, luna nad vasjo, žetev, pastir, grad, ladja, lovec, mlin, ples, ptica, konjenik, žongler) so moje risbe-nadomestki, da vidiš razmerja — prava ilustracija jih zamenja 1:1. Klik na »izberi« nastavi slog za mizo.</p></div>
+		<div class="styles">${Object.entries(STYLES).map(([k,[name,desc]])=>`<div class="style ${state.k===k?'on':''}">
+			<div class="hd"><b>${k.toUpperCase()} · ${name}</b><span class="sp"></span><button type="button" data-pick="${k}">${state.k===k?'izbrano':'izberi'}</button></div>
+			<div class="row">${sample.map(c=>card(c,{legal:false,button:false,k,size:'lg'})).join('')}</div>
+			<small>${desc}</small></div>`).join('')}</div>
+	</div>`;
+}
+
+const NOTES = {
+	dark:[['Temna','Skoraj črna podlaga, zeleni odsev na sredini, zlat poudarek. Plošče so prosojne, da se čuti miza pod njimi.'],['Tipografija','Sora za naslove, Fraunces za številke na kartah, IBM Plex Sans za vse ostalo.']],
+	light:[['Svetla','Umirjena: topla siva podlaga (#d9d4c7) namesto bele, plošče le malo svetlejše, sredina ostane temno zeleno platno.'],['Poudarek','Temnejše zlato (#9a6a15), da na sivi doseže kontrast.']],
+	blue:[['Modra','Petrolejska podlaga in svetlejši modri odsev na sredini, koralen poudarek in rumeni čipi — vzeto iz smeri 4.'],['Kaj se ne spremeni','Postavitev, plošče in karte so iste; menja se samo barva.']]
+};
+const PANEL_NOTE = ['Plošče','Info levo, zapisnik in klepet desno. Vsaka se skrije z gumbom v svoji glavi ali s stikalom; na telefonu so stikala v vrhnji vrstici. Ko so skrite vse tri, se igralci razmaknejo in štih zraste.'];
+const DEVICE_NOTE = {
+	desktop:['Desktop','Sredina je vedno na sredini prostora, ki ostane med ploščami.'],
+	phone:['Telefon pokončno','Privzeta postavitev: čipi v vrsti, igralci ožje, plošče pod roko. Roka je pahljača z večjim prekrivanjem — dovoljene karte se dvignejo.'],
+	land:['Telefon ležeče','Sever sedi nad štihom, plošče so ožje in se pomikajo. Roka ima tri načine: pahljača (kot na desktopu), kup (karte skoraj druga na drugi, dovoljene privzdignjene) in dve vrsti (samo oznake, brez slik).']
+};
+
+const frame=document.getElementById('frame'), app=document.getElementById('app'), scaler=document.getElementById('scaler'), stage=document.querySelector('.stage');
+const state={ s:'dark', d:'desktop', k:'a', p:'miza', h:'fan', panels:{ info:true, sheet:true, chat:true } };
+
+function render(){
+	app.innerHTML = state.p==='miza' ? renderMiza() : renderKarte();
+	app.querySelectorAll('[data-hide]').forEach(b=>b.addEventListener('click',()=>togglePanel(b.dataset.hide)));
+	app.querySelectorAll('[data-toggle]').forEach(b=>b.addEventListener('click',()=>togglePanel(b.dataset.toggle)));
+	app.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>set('k',b.dataset.pick)));
+}
+function togglePanel(name){
+	state.panels[name]=!state.panels[name];
+	document.querySelectorAll('.seg[data-k="panels"] button').forEach(b=>b.setAttribute('aria-pressed',state.panels[b.dataset.v]));
+	render(); fit(); save();
+}
+function set(k,v){
+	state[k]=v;
+	document.querySelectorAll(`.seg[data-k="${k}"] button`).forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));
+	frame.dataset.s=state.s; frame.dataset.d=state.d; frame.dataset.k=state.k;
+	document.querySelector('.ctl.land-only').classList.toggle('show', state.d==='land' && state.p==='miza');
+	const n=[...NOTES[state.s], DEVICE_NOTE[state.d], PANEL_NOTE, ['Taroki · '+STYLES[state.k][0], STYLES[state.k][1]]];
+	document.getElementById('notes').innerHTML=n.map(([b,t])=>`<div><b>${b}</b> · <span>${t}</span></div>`).join('');
+	render(); fit(); save();
+}
+function fit(){
+	const w=frame.offsetWidth, avail=stage.clientWidth, sc=Math.min(1,avail/w);
+	scaler.style.transform=`scale(${sc})`; scaler.style.height=(frame.offsetHeight*sc)+'px'; scaler.style.width=w+'px';
+}
+function save(){ try{ localStorage.setItem('tk-mock-3',JSON.stringify(state)); }catch(e){} }
+document.querySelectorAll('.seg[data-k]:not([data-k="panels"]) button').forEach(b=>b.addEventListener('click',()=>set(b.closest('.seg').dataset.k,b.dataset.v)));
+document.querySelectorAll('.seg[data-k="panels"] button').forEach(b=>b.addEventListener('click',()=>togglePanel(b.dataset.v)));
+window.addEventListener('resize',fit);
+try{ const s=JSON.parse(localStorage.getItem('tk-mock-3')||'{}'); Object.assign(state,s); if(s.panels) state.panels=Object.assign({info:true,sheet:true,chat:true},s.panels); }catch(e){}
+document.querySelectorAll('.seg[data-k="panels"] button').forEach(b=>b.setAttribute('aria-pressed',state.panels[b.dataset.v]));
+['s','d','k','h','p'].forEach(k=>set(k,state[k]));
+</script>

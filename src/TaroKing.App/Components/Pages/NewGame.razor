@@ -1,0 +1,90 @@
+@page "/nova-igra"
+
+@using TaroKing.App.Services
+
+@inject LocalGames Games
+@inject PlayerSession Me
+@inject NavigationManager Navigation
+
+<PageTitle>TaroKing — nova igra</PageTitle>
+
+<h1>Nova igra</h1>
+
+<p class="lead">Ena miza, ti in trije boti. Izberi, koliko naj traja, potem pa razdeli.</p>
+
+<section class="card-panel">
+	<h2>Koliko</h2>
+	<div class="button-row">
+		<button class="btn @Picked(SessionMode.Hands, 4)" @onclick="() => SetHands(4)">4 partije</button>
+		<button class="btn @Picked(SessionMode.Hands, 8)" @onclick="() => SetHands(8)">8 partij</button>
+		<button class="btn @Picked(SessionMode.Hands, 12)" @onclick="() => SetHands(12)">12 partij</button>
+		<button class="btn @Picked(SessionMode.Target, 500)" @onclick="() => SetTarget(500)">do 500 točk</button>
+		<button class="btn @Picked(SessionMode.Endless, 0)" @onclick="SetEndless">brez konca</button>
+	</div>
+</section>
+
+<section class="card-panel">
+	<h2>Kakšna miza</h2>
+	<div class="button-row">
+		<button class="btn @(_options.Style == TableStyle.Mixed ? "btn-picked" : null)"
+				@onclick="() => SetStyle(TableStyle.Mixed)">mešana</button>
+		<button class="btn @(_options.Style == TableStyle.Cautious ? "btn-picked" : null)"
+				@onclick="() => SetStyle(TableStyle.Cautious)">previdna</button>
+		<button class="btn @(_options.Style == TableStyle.Bold ? "btn-picked" : null)"
+				@onclick="() => SetStyle(TableStyle.Bold)">drzna</button>
+	</div>
+	<p class="hint">
+		Previdna miza licitira samo na res dobre karte, drzna gre v igro tudi na tanko in rada
+		napove pagat ultimo. Mešana je najbližje pravi družbi.
+	</p>
+</section>
+
+<section class="card-panel">
+	<h2>Tempo botov</h2>
+	<div class="button-row">
+		<button class="btn @(_options.BotDelayMs == 0 ? "btn-picked" : null)" @onclick="() => SetDelay(0)">takoj</button>
+		<button class="btn @(_options.BotDelayMs == 300 ? "btn-picked" : null)" @onclick="() => SetDelay(300)">hitro</button>
+		<button class="btn @(_options.BotDelayMs == 650 ? "btn-picked" : null)" @onclick="() => SetDelay(650)">normalno</button>
+		<button class="btn @(_options.BotDelayMs == 1200 ? "btn-picked" : null)" @onclick="() => SetDelay(1200)">počasi</button>
+	</div>
+</section>
+
+<section class="card-panel">
+	<h2>Začni</h2>
+	<p class="hint">@_options.Describe() · @_options.StyleName()</p>
+	<div class="button-row">
+		<button class="btn" @onclick="Start">razdeli</button>
+	</div>
+</section>
+
+@code {
+
+	private SessionOptions _options = new();
+
+	private string? Picked(SessionMode mode, int value) {
+		bool picked = _options.Mode == mode && mode switch {
+			SessionMode.Hands => _options.HandCount == value,
+			SessionMode.Target => _options.TargetScore == value,
+			_ => true
+		};
+
+		return picked ? "btn-picked" : null;
+	}
+
+	private void SetHands(int hands) => _options = _options with { Mode = SessionMode.Hands, HandCount = hands };
+
+	private void SetTarget(int score) => _options = _options with { Mode = SessionMode.Target, TargetScore = score };
+
+	private void SetEndless() => _options = _options with { Mode = SessionMode.Endless };
+
+	private void SetStyle(TableStyle style) => _options = _options with { Style = style };
+
+	private void SetDelay(int milliseconds) => _options = _options with { BotDelayMs = milliseconds };
+
+	private async Task Start() {
+		PlayerIdentity me = await Me.ResolveAsync();
+		LocalGame game = Games.Create(_options, me);
+
+		Navigation.NavigateTo($"/miza/{game.Id}");
+	}
+}

@@ -1,0 +1,337 @@
+@page "/miza/online/{TableId}"
+
+@using TaroKing.App.Components.Game
+@using TaroKing.App.Services
+@using TaroKing.Data
+@using TaroKing.Engine
+@using TaroKing.Engine.Cards
+@using TaroKing.Engine.Session
+
+@implements IAsyncDisposable
+
+@inject TableService Tables
+@inject PlayerSession Me
+@inject MatchStore Store
+@inject NavigationManager Navigation
+
+<PageTitle>TaroKing — @(_table?.Options.Name ?? "miza")</PageTitle>
+
+@*
+	An online table. Everything on screen comes from the server's own view of this seat: the page
+	asks for a PlayerView and draws it. It never holds another player's cards, and a move goes back
+	up carrying only this browser's identity — the server works out which seat that is.
+*@
+
+<h1 class="visually-hidden">Spletna miza</h1>
+
+@if (_table is not OnlineTable table) {
+
+	<section class="card-panel intro">
+		<h2>Te mize ni</h2>
+		<p class="lead">Povezava je zastarela ali pa je bila miza zaprta.</p>
+		<a class="btn" href="/lobi">nazaj v lobi</a>
+	</section>
+
+} else {
+
+	<div class="table-header">
+		<span class="chip chip-accent">@table.Options.Name</span>
+		<span class="chip">@PhaseName(table.Phase)</span>
+		<span class="chip">partija @Math.Max(table.HandNumber, 1) / @table.Options.Rounds</span>
+		<span class="chip">@table.Options.Describe()</span>
+
+		@if (table.Watching > 0) {
+			<span class="chip">gledalcev: @table.Watching</span>
+		}
+
+		@if (table.Options.Visibility == TableVisibility.Private) {
+			<span class="chip">zasebna</span>
+		}
+	</div>
+
+	@if (_refusal is string refusal) {
+		<p class="notice">@refusal</p>
+	}
+
+	<section class="card-panel seats">
+		<h2>Mesta</h2>
+		<div class="seat-list">
+			@for (int index = 0; index < TarokConstants.PlayerCount; index++) {
+				int seat = index;
+				TableSeat chair = table.Seats[seat];
+
+				<div class="seat-card @(MySeat == seat ? "mine" : null) @(table.IsBotPlaying(seat) ? "botted" : null)">
+					<div class="seat-card-name">
+						@chair.Name
+						@if (FlagsFor(chair) is PlayerFlags flags) {
+							<span class="muted"> · @flags.Rating</span>
+						}
+					</div>
+					<div class="seat-card-note">
+						@if (table.IsBotPlaying(seat)) {
+							<span class="badge">bot</span>
+						}
+						@if (chair.IsTaken && chair.Connections == 0) {
+							<span class="badge">ni tu</span>
+						}
+						@if (FlagsFor(chair) is PlayerFlags known) {
+							<span class="badge badge-member" title="prijavljen igralec">član</span>
+							@if (known.IsFrequentLeaver) {
+								<span class="badge badge-warn" title="pogosto zapusti mizo sredi igre">odhaja</span>
+							}
+							@if (known.Reports > 0) {
+								<span class="badge badge-warn" title="prijav na črno listo">prijav: @known.Reports</span>
+							}
+						} else if (chair.IsTaken) {
+							<span class="badge" title="igra brez računa">gost</span>
+						}
+						@if (table.Phase == TablePhase.Playing) {
+							<span class="clock @(ClockFor(seat) < 5 ? "low" : null)">@ClockFor(seat).ToString("0.0") s</span>
+						}
+					</div>
+					@if (!chair.IsTaken && MySeat is null) {
+						<button class="btn btn-quiet" @onclick="() => SitAsync(seat)">sedi</button>
+					}
+					@if (MySeat == seat && chair.BotIsPlaying) {
+						<button class="btn" @onclick="Rejoin">vrni se</button>
+					}
+					@if (CanReport(chair)) {
+						<button class="btn btn-quiet btn-small" @onclick="() => ReportAsync(chair)">prijavi</button>
+					}
+				</div>
+			}
+		</div>
+
+		@if (_reported is string reported) {
+			<p class="hint">@reported</p>
+		}
+
+		@if (MySeat is int mine) {
+			<div class="button-row">
+				<button class="btn btn-quiet" @onclick="StandAsync">vstani (mesto prevzame bot)</button>
+			</div>
+			<p class="hint">Sediš na mestu @(mine + 1). Če ti pade povezava, ti mesto čuvamo @OnlineTable.ReconnectGrace.TotalSeconds s.</p>
+		} else {
+			<p class="hint">Gledaš. Kart ne vidi nihče od gledalcev — strežnik jih sploh ne pošlje.</p>
+		}
+	</section>
+
+	@if (table.ViewFor(Me.Identity) is PlayerView view) {
+
+		<Board View="view"
+			   NameOf="table.NameOf"
+			   Busy="@(view.CurrentSeat is int turn && table.IsBotPlaying(turn))"
+			   Radlc="table.Hand?.RadlcMultiplier > 1"
+			   ShowOwnHand="!IsChoosingDiscards(view)"
+			   OnPlay="PlayAsync" />
+
+		@if (!view.IsSpectator) {
+			<ActionPanel Actions="Actions" View="view" />
+		}
+
+	} else {
+		<section class="card-panel">
+			<h2>Čakamo</h2>
+			<p class="hint">
+				@(table.Phase == TablePhase.Finished
+					? "Miza je odigrana."
+					: "Partija se začne, ko je miza sestavljena.")
+			</p>
+		</section>
+	}
+
+	@if (table.Phase == TablePhase.Finished) {
+		<SessionSummary Stats="table.Stats()"
+						YouSeat="MySeat"
+						Title="@($"Konec mize »{table.Options.Name}«")" />
+	}
+
+	<ScoreSheetView Records="table.Records" Sheet="table.Sheet" NameOf="table.NameOf" YouSeat="MySeat" />
+
+	<TableChat Lines="table.Chat" OnSay="SayAsync" />
+}
+
+@code {
+
+	private OnlineTable? _table;
+	private ITableActions? _actions;
+	private string? _refusal;
+	private string? _reported;
+	private IReadOnlyDictionary<string, PlayerFlags> _flags = new Dictionary<string, PlayerFlags>();
+	private string _flagsFor = "";
+	private PeriodicTimer? _clockTimer;
+	private Task? _clockLoop;
+	private CancellationTokenSource? _closing;
+	private bool _attached;
+
+	[Parameter]
+	public string? TableId { get; set; }
+
+	private int? MySeat => _table?.SeatOf(Me.Identity);
+
+	private ITableActions Actions => _actions ??= new OnlineActions(_table!, Me.Identity);
+
+	protected override void OnParametersSet() {
+		if (_table is not null && _table.Id == TableId) {
+			return;
+		}
+
+		Release();
+
+		_table = Tables.Find(TableId);
+		_actions = null;
+
+		if (_table is not null) {
+			_table.Changed += Redraw;
+		}
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		if (!firstRender || _table is null) {
+			return;
+		}
+
+		await Me.ResolveAsync();
+
+		_table.Attach(Me.Identity);
+		_attached = true;
+
+		StartClock();
+		await RefreshFlagsAsync();
+		StateHasChanged();
+	}
+
+	/// <summary>The lobby badges for whoever is seated, fetched again only when the seating changes.</summary>
+	private async Task RefreshFlagsAsync() {
+		if (_table is null) {
+			return;
+		}
+
+		string[] ids = [.. _table.Seats
+			.Select(seat => seat.Player?.UserId)
+			.Where(id => id is not null)
+			.Select(id => id!)
+			.Order(StringComparer.Ordinal)];
+
+		string key = string.Join(',', ids);
+		if (key == _flagsFor) {
+			return;
+		}
+
+		_flagsFor = key;
+		_flags = await Store.FlagsAsync(ids);
+	}
+
+	private PlayerFlags? FlagsFor(TableSeat chair) =>
+		chair.Player?.UserId is string userId && _flags.TryGetValue(userId, out PlayerFlags? flags) ? flags : null;
+
+	private bool CanReport(TableSeat chair) =>
+		Me.Identity.IsMember
+		&& chair.Player?.UserId is string other
+		&& other != Me.Identity.UserId;
+
+	private async Task ReportAsync(TableSeat chair) {
+		if (Me.Identity.UserId is not string me || chair.Player?.UserId is not string other) {
+			return;
+		}
+
+		bool added = await Store.ReportAsync(me, other, $"miza {_table?.Id}");
+		_reported = added ? $"{chair.Name} je prijavljen." : $"{chair.Name} si že prijavil.";
+		_flagsFor = "";
+		await RefreshFlagsAsync();
+	}
+
+	private void Rejoin() {
+		_table?.Rejoin(Me.Identity);
+		_actions = null;
+	}
+
+	/// <summary>
+	/// The clocks run on the server, but nothing pushes a redraw four times a second, so the page
+	/// repaints itself twice a second while a hand is live. It only ever redraws what it already has.
+	/// </summary>
+	private void StartClock() {
+		_closing = new CancellationTokenSource();
+		_clockTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
+		_clockLoop = Task.Run(async () => {
+			try {
+				while (await _clockTimer.WaitForNextTickAsync(_closing.Token)) {
+					if (_table?.Phase == TablePhase.Playing) {
+						await InvokeAsync(StateHasChanged);
+					}
+				}
+			} catch (OperationCanceledException) {
+			}
+		});
+	}
+
+	private double ClockFor(int seat) => _table?.ClockFor(seat, DateTimeOffset.UtcNow) ?? 0;
+
+	private async Task SitAsync(int seat) {
+		if (_table is null) {
+			return;
+		}
+
+		await Me.ResolveAsync();
+		_refusal = _table.Sit(Me.Identity, seat);
+		_actions = null;
+	}
+
+	private Task StandAsync() {
+		_table?.Stand(Me.Identity);
+		_actions = null;
+
+		return Task.CompletedTask;
+	}
+
+	private Task SayAsync(string text) {
+		_table?.Say(Me.Identity, text);
+
+		return Task.CompletedTask;
+	}
+
+	private Task PlayAsync(Card card) => _table?.PlayCardAsync(Me.Identity, card) ?? Task.CompletedTask;
+
+	private void Redraw() => InvokeAsync(async () => {
+		await RefreshFlagsAsync();
+		StateHasChanged();
+	});
+
+	private static bool IsChoosingDiscards(PlayerView view) =>
+		view.Phase == GamePhase.Talon && !view.AwaitsUpgradeDecision && view.LegalDiscards.Count > 0;
+
+	private static string PhaseName(TablePhase phase) => phase switch {
+		TablePhase.Waiting => "čaka igralce",
+		TablePhase.Playing => "igra teče",
+		_ => "končana"
+	};
+
+	public async ValueTask DisposeAsync() {
+		Release();
+
+		if (_clockLoop is Task loop) {
+			try {
+				await loop;
+			} catch (OperationCanceledException) {
+			}
+		}
+	}
+
+	private void Release() {
+		if (_table is not null) {
+			if (_attached) {
+				_table.Detach(Me.Identity);
+				_attached = false;
+			}
+
+			_table.Changed -= Redraw;
+			_table = null;
+		}
+
+		_closing?.Cancel();
+		_clockTimer?.Dispose();
+		_clockTimer = null;
+		_closing?.Dispose();
+		_closing = null;
+	}
+}

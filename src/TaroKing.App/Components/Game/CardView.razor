@@ -1,0 +1,87 @@
+@using TaroKing.Engine.Cards
+
+@*
+	One card. It is a button whenever it can be clicked and a plain div otherwise, so the keyboard
+	reaches exactly the cards that are in play. "Dimmed" is a hint, never a rule: the server decides.
+*@
+
+@if (Clickable) {
+	<button type="button"
+			class="@CssClass"
+			title="@Title"
+			@onclick="Clicked">
+		@Face
+	</button>
+} else {
+	<div class="@CssClass" title="@Title">
+		@Face
+	</div>
+}
+
+@code {
+
+	[Parameter, EditorRequired]
+	public Card Card { get; set; }
+
+	/// <summary>The engine says this card may be played right now.</summary>
+	[Parameter]
+	public bool Legal { get; set; } = true;
+
+	/// <summary>Picked out — a selected discard, or the card that took the trick.</summary>
+	[Parameter]
+	public bool Selected { get; set; }
+
+	/// <summary>Smaller, for piles and finished tricks.</summary>
+	[Parameter]
+	public bool Small { get; set; }
+
+	[Parameter]
+	public EventCallback<Card> OnSelect { get; set; }
+
+	private bool Clickable => OnSelect.HasDelegate && Legal;
+
+	private Task Clicked() => OnSelect.InvokeAsync(Card);
+
+	private string CssClass {
+		get {
+			List<string> classes = ["card", $"suit-{Card.Suit.ToString().ToLowerInvariant()}"];
+
+			if (Small) {
+				classes.Add("card-small");
+			}
+
+			if (Selected) {
+				classes.Add("card-selected");
+			}
+
+			if (OnSelect.HasDelegate && !Legal) {
+				classes.Add("card-dimmed");
+			}
+
+			if (Clickable) {
+				classes.Add("card-playable");
+			}
+
+			return string.Join(' ', classes);
+		}
+	}
+
+	private string Title => Card.IsTrump
+		? $"{Card.ShortName} — tarok, {Card.Points} t."
+		: $"{Card.ShortName} — {Card.Suit.SlovenianName()}, {Card.Points} t.";
+
+	/// <summary>Trumps wear their numeral big; plain suits wear their colour.</summary>
+	private RenderFragment Face => builder => {
+		builder.OpenElement(0, "span");
+		builder.AddAttribute(1, "class", "card-corner");
+		builder.AddContent(2, Card.IsTrump ? "T" : RankSymbol);
+		builder.CloseElement();
+
+		builder.OpenElement(3, "span");
+		builder.AddAttribute(4, "class", Card.IsTrump ? "card-figure card-figure-trump" : "card-figure");
+		builder.AddContent(5, Card.IsTrump ? Card.ShortName : Card.Suit.Symbol());
+		builder.CloseElement();
+	};
+
+	private string RankSymbol => Card.ShortName[..^1];
+}

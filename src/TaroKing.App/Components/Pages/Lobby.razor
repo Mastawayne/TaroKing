@@ -1,0 +1,187 @@
+@page "/lobi"
+
+@using TaroKing.App.Services
+
+@implements IDisposable
+
+@inject TableService Tables
+@inject PlayerSession Me
+@inject NavigationManager Navigation
+
+<PageTitle>TaroKing — lobi</PageTitle>
+
+<h1>Lobi</h1>
+
+<section class="card-panel">
+	<h2>Ime</h2>
+	@if (Me.Identity.IsMember) {
+		<p class="hint">
+			Za mizo si <strong>@Me.Identity.Name</strong>, rating <strong>@Me.Identity.Rating</strong>.
+			Partije se ti zapisujejo v <a href="/zgodovina">zgodovino</a>.
+		</p>
+	} else {
+		<div class="button-row">
+			<input class="field" @bind="_name" @bind:event="oninput" maxlength="20" placeholder="kako ti rečejo" />
+			<button class="btn btn-quiet" @onclick="Rename" disabled="@(string.IsNullOrWhiteSpace(_name))">preimenuj</button>
+		</div>
+		<p class="hint">
+			Za mizo te bodo videli kot <strong>@Me.Identity.Name</strong>. Kot gost nisi ocenjen in
+			nič se ti ne zapomni — <a href="/prijava?returnUrl=/lobi">prijava</a> to spremeni.
+		</p>
+	}
+</section>
+
+<section class="card-panel">
+	<h2>Odpri mizo</h2>
+
+	<div class="button-row">
+		<input class="field" @bind="_tableName" maxlength="40" placeholder="ime mize" />
+	</div>
+
+	<div class="button-row">
+		<label class="field-label">partij</label>
+		<input class="field field-short" type="number" @bind="_rounds"
+			   min="@TableOptions.MinRounds" max="@TableOptions.MaxRounds" />
+
+		<label class="field-label">sekund na potezo</label>
+		<input class="field field-short" type="number" step="0.5" @bind="_seconds"
+			   min="@TableOptions.MinSecondsPerMove" max="@TableOptions.MaxSecondsPerMove" />
+
+		<label class="field-label">rezerva</label>
+		<input class="field field-short" type="number" @bind="_reserve" min="15" max="300" />
+	</div>
+
+	<div class="button-row">
+		<label class="field-label">najnižji rating</label>
+		<input class="field field-short" type="number" @bind="_minimumRating" min="0" max="3000" />
+
+		<label class="check">
+			<input type="checkbox" @bind="_membersOnly" /> samo člani
+		</label>
+		<label class="check">
+			<input type="checkbox" @bind="_private" /> zasebna (samo prek povezave)
+		</label>
+		<label class="check">
+			<input type="checkbox" @bind="_fillWithBots" /> prazna mesta igrajo boti
+		</label>
+	</div>
+
+	<div class="button-row">
+		<button class="btn" @onclick="Open">odpri mizo</button>
+	</div>
+
+	<p class="hint">
+		Sekunde na potezo so prirastek, ne giljotina: vsaka poteza ti toliko sekund doda nazaj,
+		daljše razmišljanje pa jé rezervo. Tarok se igra tudi v treh, a motor je zaenkrat strogo
+		štiriroko, zato je mest vedno štiri.
+	</p>
+</section>
+
+<section class="card-panel">
+	<h2>Odprte mize</h2>
+
+	@if (_lobby.Count == 0) {
+		<p class="hint">Nobene javne mize. Odpri svojo — boti sedejo na prazna mesta, dokler ne pride kdo.</p>
+	} else {
+		<table class="stats lobby">
+			<thead>
+				<tr>
+					<th>miza</th>
+					<th>stanje</th>
+					<th>igralci</th>
+					<th>gledalci</th>
+					<th>krog</th>
+					<th>nastavitve</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (TableSummary table in _lobby) {
+					<tr>
+						<td>@table.Name</td>
+						<td>@PhaseName(table.Phase)</td>
+						<td>@table.Seated / @table.Seats</td>
+						<td>@table.Watching</td>
+						<td>@table.Round / @table.Rounds</td>
+						<td class="muted">
+							@table.Options
+							@if (table.MinimumRating > 0) {
+								<span> · min @table.MinimumRating</span>
+							}
+							@if (table.MembersOnly) {
+								<span> · samo člani</span>
+							}
+						</td>
+						<td><a class="btn btn-quiet" href="/miza/online/@table.Id">k mizi</a></td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+</section>
+
+@code {
+
+	private IReadOnlyList<TableSummary> _lobby = [];
+	private string _name = "";
+	private string _tableName = "Miza";
+
+	private int _rounds = 12;
+	private double _seconds = 3.0;
+	private int _reserve = 60;
+	private int _minimumRating;
+	private bool _membersOnly;
+	private bool _private;
+	private bool _fillWithBots = true;
+
+	protected override void OnInitialized() {
+		Tables.LobbyChanged += Redraw;
+		_lobby = Tables.Lobby();
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		if (!firstRender) {
+			return;
+		}
+
+		await Me.ResolveAsync();
+		_name = Me.Identity.Name;
+		_lobby = Tables.Lobby();
+
+		StateHasChanged();
+	}
+
+	public void Dispose() => Tables.LobbyChanged -= Redraw;
+
+	private void Redraw() => InvokeAsync(() => {
+		_lobby = Tables.Lobby();
+		StateHasChanged();
+	});
+
+	private async Task Rename() {
+		await Me.RenameAsync(_name);
+		_name = Me.Identity.Name;
+	}
+
+	private void Open() {
+		TableOptions options = new() {
+			Name = _tableName,
+			Rounds = _rounds,
+			SecondsPerMove = _seconds,
+			ReserveSeconds = _reserve,
+			MinimumRating = _minimumRating,
+			MembersOnly = _membersOnly,
+			FillWithBots = _fillWithBots,
+			Visibility = _private ? TableVisibility.Private : TableVisibility.Public
+		};
+
+		OnlineTable table = Tables.Open(options, Me.Identity);
+		Navigation.NavigateTo($"/miza/online/{table.Id}");
+	}
+
+	private static string PhaseName(TablePhase phase) => phase switch {
+		TablePhase.Waiting => "čaka",
+		TablePhase.Playing => "igra",
+		_ => "končana"
+	};
+}

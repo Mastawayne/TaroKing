@@ -1,0 +1,142 @@
+@page "/zgodovina"
+
+@using TaroKing.App.Services
+@using TaroKing.Data
+
+@inject PlayerSession Me
+@inject MatchStore Store
+
+<PageTitle>TaroKing — zgodovina</PageTitle>
+
+<h1>Zgodovina</h1>
+
+@if (!_loaded) {
+	<p class="hint">Nalagam…</p>
+} else if (!Me.Identity.IsMember) {
+	<section class="card-panel">
+		<p class="lead">Zgodovina se piše samo prijavljenim. Kot gost igraš, a se nič ne zapomni.</p>
+		<div class="button-row">
+			<a class="btn" href="/prijava?returnUrl=/zgodovina">prijava</a>
+			<a class="btn btn-quiet" href="/registracija?returnUrl=/zgodovina">registracija</a>
+		</div>
+	</section>
+} else {
+
+	<section class="card-panel">
+		<h2>@Me.Identity.Name · rating @Me.Identity.Rating</h2>
+
+		@if (_stats is PlayerStats stats && stats.HandsPlayed > 0) {
+			<table class="stats">
+				<tbody>
+					<tr><td>odigranih partij</td><td>@stats.MatchesPlayed</td></tr>
+					<tr><td>odigranih iger</td><td>@stats.HandsPlayed</td></tr>
+					<tr>
+						<td>igral kot igralec</td>
+						<td>@stats.HandsDeclared (dobil @stats.HandsDeclaredWon, @Percent(stats.DeclarerSuccessRate))</td>
+					</tr>
+					<tr><td>povprečna razlika</td><td>@stats.AverageDifference.ToString("+0.0;-0.0;0")</td></tr>
+					<tr>
+						<td>pagat ultimo</td>
+						<td>
+							@if (stats.PagatUltimoAnnounced == 0) {
+								<span class="muted">še nenapovedan</span>
+							} else {
+								<span>napovedan @stats.PagatUltimoAnnounced×, uspel @stats.PagatUltimoConverted× (@Percent(stats.PagatUltimoConversion))</span>
+							}
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+			@if (stats.Contracts.Count > 0) {
+				<h2>Po igrah</h2>
+				<table class="stats">
+					<thead>
+						<tr><th>igra</th><th>igral</th><th>dobil</th><th>uspeh</th></tr>
+					</thead>
+					<tbody>
+						@foreach (ContractRecord record in stats.Contracts) {
+							<tr>
+								<td>@record.Name</td>
+								<td>@record.Played</td>
+								<td>@record.Won</td>
+								<td class="@(record.SuccessRate >= 0.5 ? "plus" : "minus")">@Percent(record.SuccessRate)</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			}
+		} else {
+			<p class="hint">Še nobene shranjene partije. Odigraj sezijo proti botom ali sedi za spletno mizo.</p>
+		}
+	</section>
+
+	<section class="card-panel">
+		<h2>Zadnjih @MatchStore.HistoryLength partij</h2>
+
+		@if (_history.Count == 0) {
+			<p class="hint">Prazno.</p>
+		} else {
+			<table class="stats lobby">
+				<thead>
+					<tr>
+						<th>kdaj</th>
+						<th>miza</th>
+						<th>igralci</th>
+						<th>partij</th>
+						<th>tvoj izid</th>
+						<th>rating</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					@foreach (MatchSummary match in _history) {
+						<tr>
+							<td class="muted">@match.FinishedAt.ToLocalTime().ToString("d. M. yyyy HH:mm")</td>
+							<td>@match.Name</td>
+							<td class="muted">@string.Join(", ", match.Names)</td>
+							<td>@match.Rounds</td>
+							<td class="@(match.YourFinal >= 0 ? "plus" : "minus")">@Signed(match.YourFinal)</td>
+							<td>
+								@if (match.YourRatingDelta is int delta) {
+									<span class="@(delta >= 0 ? "plus" : "minus")">@Signed(delta)</span>
+								} else {
+									<span class="muted">—</span>
+								}
+							</td>
+							<td><a class="btn btn-quiet" href="/partija/@match.Id">poglej</a></td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</section>
+}
+
+@code {
+
+	private bool _loaded;
+	private PlayerStats? _stats;
+	private IReadOnlyList<MatchSummary> _history = [];
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		if (!firstRender) {
+			return;
+		}
+
+		PlayerIdentity me = await Me.ResolveAsync();
+
+		if (me.UserId is string userId) {
+			_stats = await Store.StatsAsync(userId);
+			_history = await Store.HistoryAsync(userId);
+		}
+
+		_loaded = true;
+		StateHasChanged();
+	}
+
+	private static string Percent(double ratio) => (ratio * 100).ToString("0") + " %";
+
+	private static string Signed(int value) =>
+		value.ToString("+#;-#;0", System.Globalization.CultureInfo.InvariantCulture);
+}

@@ -1,0 +1,177 @@
+@page "/partija/{MatchId:int}"
+
+@using TaroKing.App.Services
+@using TaroKing.Data
+@using TaroKing.Engine
+@using TaroKing.Engine.Bidding
+
+@inject PlayerSession Me
+@inject MatchStore Store
+@inject LocalGames Games
+@inject NavigationManager Navigation
+
+<PageTitle>TaroKing — partija @MatchId</PageTitle>
+
+@if (!_loaded) {
+	<p class="hint">Nalagam…</p>
+} else if (_match is not Match match) {
+	<section class="card-panel intro">
+		<h2>Te partije ni</h2>
+		<a class="btn" href="/zgodovina">nazaj</a>
+	</section>
+} else {
+
+	<h1>@match.Name</h1>
+
+	<div class="table-header">
+		<span class="chip">@(match.Kind == MatchKind.Online ? "spletna miza" : "proti botom")</span>
+		<span class="chip">@match.Rounds partij</span>
+		<span class="chip">@(match.Rated ? "ocenjena" : "neocenjena")</span>
+		<span class="chip">@match.FinishedAt.ToLocalTime().ToString("d. M. yyyy HH:mm")</span>
+	</div>
+
+	<section class="card-panel">
+		<h2>Igralci</h2>
+		<table class="stats">
+			<thead>
+				<tr><th>mesto</th><th>ime</th><th>skupaj</th><th>radlci</th><th>z radlci</th><th>rating</th></tr>
+			</thead>
+			<tbody>
+				@foreach (MatchSeat seat in match.Seats.OrderBy(chair => chair.Seat)) {
+					<tr class="@(seat.UserId is not null && seat.UserId == Me.Identity.UserId ? "you" : null)">
+						<td>@(seat.Seat + 1)</td>
+						<td>
+							@seat.Name
+							@if (seat.IsBot) {
+								<span class="badge">bot</span>
+							}
+							@if (seat.Abandoned) {
+								<span class="badge">odšel</span>
+							}
+						</td>
+						<td class="@(seat.Total >= 0 ? "plus" : "minus")">@Signed(seat.Total)</td>
+						<td>@seat.Radlci</td>
+						<td class="@(seat.FinalTotal >= 0 ? "plus" : "minus")">@Signed(seat.FinalTotal)</td>
+						<td>
+							@if (seat.RatingBefore is int before && seat.RatingAfter is int after) {
+								<span>@before → @after (<span class="@(after >= before ? "plus" : "minus")">@Signed(after - before)</span>)</span>
+							} else {
+								<span class="muted">—</span>
+							}
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</section>
+
+	<section class="card-panel">
+		<h2>Igre</h2>
+		<p class="hint">
+			Vsako igro lahko odigraš znova proti botom — iste karte, isti sedež, ti pa se odločaš na novo.
+		</p>
+		<table class="stats lobby">
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>igra</th>
+					<th>igralec</th>
+					<th>izid</th>
+					@for (int seat = 0; seat < TarokConstants.PlayerCount; seat++) {
+						<th>@NameOf(match, seat)</th>
+					}
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (Hand hand in match.Hands) {
+					<tr>
+						<td class="muted">@hand.Number</td>
+						<td>@Contracts.Info(hand.Contract).SlovenianName</td>
+						<td>@NameOf(match, hand.Declarer)</td>
+						<td class="@(hand.DeclarerWon ? "plus" : "minus")">@(hand.DeclarerWon ? "dobil" : "izgubil")</td>
+						@for (int seat = 0; seat < TarokConstants.PlayerCount; seat++) {
+							int score = hand.ScoreFor(seat);
+							<td class="@(score > 0 ? "plus" : score < 0 ? "minus" : null)">@Signed(score)</td>
+						}
+						<td>
+							@if (MySeat(match) is int mine) {
+								int seed = hand.Seed;
+								bool klop = hand.CompulsoryKlop;
+								<button class="btn btn-quiet" @onclick="() => Replay(seed, klop, mine)">odigraj znova</button>
+							}
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</section>
+
+	@if (match.Chat.Count > 0) {
+		<section class="card-panel chat">
+			<h2>Za mizo</h2>
+			<ol class="chat-lines">
+				@foreach (ChatMessage line in match.Chat) {
+					<li class="@(line.FromTable ? "from-table" : null)">
+						<span class="chat-who">@(line.FromTable ? "•" : line.Who)</span>
+						<span class="chat-text">@line.Text</span>
+					</li>
+				}
+			</ol>
+		</section>
+	}
+
+	<div class="button-row">
+		<a class="btn btn-quiet" href="/zgodovina">nazaj v zgodovino</a>
+	</div>
+}
+
+@code {
+
+	private bool _loaded;
+	private Match? _match;
+
+	[Parameter]
+	public int MatchId { get; set; }
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		if (!firstRender) {
+			return;
+		}
+
+		await Me.ResolveAsync();
+		_match = await Store.MatchAsync(MatchId);
+		_loaded = true;
+
+		StateHasChanged();
+	}
+
+	private static string NameOf(Match match, int seat) =>
+		match.Seats.FirstOrDefault(s => s.Seat == seat)?.Name ?? $"Mesto {seat + 1}";
+
+	/// <summary>The chair the reader sat in, or forehand for somebody who only reads.</summary>
+	private int? MySeat(Match match) {
+		if (Me.Identity.UserId is string userId) {
+			return match.Seats.FirstOrDefault(seat => seat.UserId == userId)?.Seat;
+		}
+
+		return null;
+	}
+
+	/// <summary>The same deal, the same chair, three bots for company — and a fresh set of decisions.</summary>
+	private void Replay(int seed, bool compulsoryKlop, int seat) {
+		LocalGame game = Games.Create(new SessionOptions {
+			Mode = SessionMode.Hands,
+			HandCount = 1,
+			Seed = seed,
+			ReplayCompulsoryKlop = compulsoryKlop,
+			HumanSeat = seat,
+			IsReplay = true
+		}, Me.Identity);
+
+		Navigation.NavigateTo($"/miza/{game.Id}");
+	}
+
+	private static string Signed(int value) =>
+		value.ToString("+#;-#;0", System.Globalization.CultureInfo.InvariantCulture);
+}
